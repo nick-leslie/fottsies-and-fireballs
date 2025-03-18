@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "raylib": "^0.14.0"
+  }
+}
