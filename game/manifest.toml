@@ -3,6 +3,7 @@
 
 packages = [
   { name = "birl", version = "1.8.0", build_tools = ["gleam"], requirements = ["gleam_regexp", "gleam_stdlib", "ranger"], otp_app = "birl", source = "hex", outer_checksum = "2AC7BA26F998E3DFADDB657148BD5DDFE966958AD4D6D6957DD0D22E5B56C400" },
+  { name = "game_kernel", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], source = "local", path = "../game_kernel" },
   { name = "gleam_regexp", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_regexp", source = "hex", outer_checksum = "7F5E0C0BBEB3C58E57C9CB05FA9002F970C85AD4A63BA1E55CBCB35C15809179" },
   { name = "gleam_stdlib", version = "0.57.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "86EFACDF6460B8681E82752C5490F9630EC0F138F88A037DDCB241799AA8811F" },
   { name = "gleam_yielder", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_yielder", source = "hex", outer_checksum = "8E4E4ECFA7982859F430C57F549200C7749823C106759F4A19A78AEA6687717A" },
@@ -12,5 +13,6 @@ packages = [
 
 [requirements]
 birl = { version = ">= 1.8.0 and < 2.0.0" }
+game_kernel = { path = "../game_kernel" }
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
