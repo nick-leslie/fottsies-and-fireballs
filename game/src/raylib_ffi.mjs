@@ -32,3 +32,13 @@ export function clear_background() {
 export function end_drawing() {
   r.EndDrawing()
 }
+
+export function load_texture(path) {
+  r.LoadTexture(path)
+}
+export function draw_texture(texture) {
+  r.DrawTexture(texture)
+}
+export function unload_texture(texture) {
+  r.UnloadTexture(texture)
+}

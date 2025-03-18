@@ -1,5 +1,23 @@
-import gleam/io
-
-pub fn main() {
-  io.println("Hello from engine!")
+pub type Dir {
+  Back
+  Forward
+  Neutral
+  Up
+  UpBack
+  UpForward
+  Down
+  DownForward
+  DownBackward
 }
+
+pub type Attack {
+  Light
+  Medium
+  Heavy
+}
+
+pub type Input {
+  Input(dir:Dir)
+  InputWithAttack(dir:Dir,attack:Attack)
+}
+
