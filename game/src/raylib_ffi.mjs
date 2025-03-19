@@ -81,3 +81,7 @@ export function get_key_pressed() {
 export function get_char_pressed() {
   return r.GetCharPressed()
 }
+
+export function check_collison_rect(rec1,rec2) {
+  return r.CheckCollisionRecs(rec1, rec2)
+}

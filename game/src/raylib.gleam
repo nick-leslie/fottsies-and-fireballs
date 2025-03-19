@@ -1,3 +1,5 @@
+import player
+
 @external(javascript, "./raylib_ffi.mjs", "init_window")
 pub fn init_window(width:Int,heigth:Int,title:String) -> Nil
 
@@ -66,3 +68,9 @@ pub fn get_key_pressed() -> Key
 // // Get char pressed (unicode), call it multiple times for chars queued, returns 0 when the queue is empty
 @external(javascript, "./raylib_ffi.mjs", "get_char_pressed")
 pub fn get_char_pressed()-> Key
+
+
+
+// collisons ----
+@external(javascript, "./raylib_ffi.mjs", "check_collison_rect")
+pub fn check_collison_rect(rec1:player.Rectangle,rec2:player.Rectangle) -> Bool
