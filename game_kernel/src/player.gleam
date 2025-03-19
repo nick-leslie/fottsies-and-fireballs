@@ -1,3 +1,4 @@
+import gleam/io
 import gleam/result
 import gleam/option
 import iv
@@ -9,7 +10,7 @@ pub type InputMap(a) = dict.Dict(input.Key,a)
 type StateIndex = Int
 //todo we may ned to split this up to reduce the copying
 // right now we have player taking the world as a generic so we can do things like spawn fireballs
-pub type PlayerState(world) {
+pub type PlayerState {
   PlayerState(
     p1_side:Bool,
     x:Float,
@@ -17,14 +18,14 @@ pub type PlayerState(world) {
     input_map:InputMap(input.Dir),
     attack_map:InputMap(input.Attack),
     used_keys:List(input.Key), //todo see if we can get rid of this
-    states:iv.Array(State(world)),
+    states:iv.Array(State),
     patterns:List(#(List(input.Input),StateIndex)),
     current_state:Int,
     current_frame:Int
   )
 }
 
-pub fn new_player(p1_side:Bool,x,y,states:iv.Array(State(world))) -> PlayerState(world) {
+pub fn new_player(p1_side:Bool,x,y,states:iv.Array(State)) -> PlayerState {
   PlayerState(
     p1_side:p1_side,
     x:x,
@@ -40,28 +41,27 @@ pub fn new_player(p1_side:Bool,x,y,states:iv.Array(State(world))) -> PlayerState
 }
 
 
-pub fn add_new_pattern(player:PlayerState(world),input:List(input.Input),state_index:StateIndex) {
+pub fn add_new_pattern(player:PlayerState,input:List(input.Input),state_index:StateIndex) {
   //this is slower but its a one time thing and its needed for priority
   let patterns  = list.append(player.patterns,[#(input,state_index)])
   PlayerState(..player,patterns:patterns)
 }
 
-pub fn update_input_map(player:PlayerState(world),input_map) {
+pub fn update_input_map(player:PlayerState,input_map) {
   let input_keys = dict.to_list(input_map) |> list.map(fn(mapping) { mapping.0})
   let attack_keys = dict.to_list(player.attack_map) |> list.map(fn(mapping) { mapping.0})
 
   PlayerState(..player,input_map:input_map,used_keys:list.append(attack_keys,input_keys))
 }
-pub fn update_attack_map(player:PlayerState(world),attack_map) {
+
+pub fn update_attack_map(player:PlayerState,attack_map) {
   let attack_keys = dict.to_list(attack_map) |> list.map(fn(mapping) { mapping.0})
   let input_keys = dict.to_list(player.input_map) |> list.map(fn(mapping) { mapping.0})
 
   PlayerState(..player,attack_map:attack_map,used_keys:list.append(attack_keys,input_keys))
 }
 
-
-
-fn get_current_frame(player:PlayerState(world)) {
+fn get_current_frame(player:PlayerState) {
   let assert Ok(player_state) = iv.get(player.states,player.current_state)
   let assert Ok(player_frame) = iv.get(player_state.frames,player.current_frame)
   player_frame
@@ -70,14 +70,14 @@ fn get_current_frame(player:PlayerState(world)) {
 
 //---- states
 
-pub type State(world) {
+pub type State {
   State(
     name:String,
-    frames:iv.Array(Frame(world))
+    frames:iv.Array(Frame)
   )
 }
 
-pub type Frame(world) {
+pub type Frame {
   Startup(
     hurt_boxes:List(Rectangle),
     cancel_options:List(StateIndex),
@@ -85,7 +85,7 @@ pub type Frame(world) {
   Active (
     hurt_boxes:List(Rectangle),
     cancel_options:List(StateIndex),
-    on_active:option.Option(fn (world,Bool) -> world),
+    on_active:option.Option(fn (PlayerState) -> PlayerState), // takes in the world
     hit_boxes:List(Rectangle),
   )
   Recovery(
@@ -95,19 +95,22 @@ pub type Frame(world) {
   )
 }
 
-pub fn update_state(player:PlayerState(world),buffer:input.Buffer) {
+pub fn update_state(player:PlayerState,buffer:input.Buffer) {
   let proposed_state = input.pick_state(buffer,player.patterns)
   case proposed_state == player.current_state {
     False -> {
       let frame = get_current_frame(player)
       case list.find(frame.cancel_options,fn (cancel_index) {cancel_index == proposed_state}) {
-        Error(_) -> advance_frame(player,proposed_state)
+        Error(_) -> {
+          io.debug("test")
+          advance_frame(player,proposed_state)
+        }
         Ok(_) -> {
           PlayerState(
             ..player,
             current_state:proposed_state,
             current_frame:0,
-        )
+          )
         }
       }
     }
@@ -115,11 +118,13 @@ pub fn update_state(player:PlayerState(world),buffer:input.Buffer) {
       advance_frame(player,0)
     }
   }
+  |> run_frame
 }
 
-fn advance_frame(player:PlayerState(world),next_state:StateIndex) {
+//todo this is breaking
+fn advance_frame(player:PlayerState,next_state:StateIndex) {
   let assert Ok(state) = iv.get(player.states,player.current_state)
-  case iv.length(state.frames) == player.current_frame {
+  case {player.current_frame == {iv.length(state.frames) - 1}} {
     False -> {
       PlayerState(..player,current_frame:player.current_frame+1)
     }
@@ -129,14 +134,29 @@ fn advance_frame(player:PlayerState(world),next_state:StateIndex) {
   }
 }
 
+fn run_frame(player:PlayerState) {
+  //todo resolve collisons and physics here
+  let current_frame = get_current_frame(player)
+  case current_frame {
+    Active(_hurt_boxes, _cansels, action, _hit_boxes) -> {
+      case action {
+        option.None -> player
+        option.Some(action) -> action(player)
+      }
+    }
+    Recovery(_, _) -> player
+    Startup(_, _) -> player
+  }
+}
+
 //--- collisions
 
-pub type CollionInfo(world) {
+pub type CollionInfo {
   CollionInfo(
     hit_box:Rectangle,
     hurt_box:Rectangle,
-    colider:PlayerState(world),
-    colidee:PlayerState(world),
+    colider:PlayerState,
+    colidee:PlayerState,
   )
 }
 
@@ -152,7 +172,7 @@ pub type Rectangle {
   )
 }
 
-pub fn check_collisons(colider:PlayerState(world),colidee:PlayerState(world),colision_fn:fn(Rectangle,Rectangle) -> Bool) {
+pub fn check_collisons(colider:PlayerState,colidee:PlayerState,colision_fn:fn(Rectangle,Rectangle) -> Bool) {
   let colider_frame = get_current_frame(colider)
   let colidee_frame = get_current_frame(colidee)
   case colider_frame {

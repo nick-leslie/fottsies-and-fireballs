@@ -10,9 +10,9 @@ import player.{Startup,State,Active,Recovery}
 //todo this is a bad name
 pub type GameKernel {
   GameKernel(
-    p1:player.PlayerState(GameKernel),
+    p1:player.PlayerState,
     p1_buffer:input.Buffer,
-    p2:player.PlayerState(GameKernel),
+    p2:player.PlayerState,
   )
 }
 
@@ -25,7 +25,10 @@ pub fn new_game_kernel() {
       State("neutral",iv.from_list([Startup([],[1])])),
       State("forward-quarter-circle",iv.from_list([
         Startup([],[]),Startup([],[]),Startup([],[]),Startup([],[]),Startup([],[]),
-        Active(hit_boxes:[],hurt_boxes:[],cancel_options:[],on_active:option.None),
+        Active(hit_boxes:[],hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
+          io.debug("ran active frame")
+          player
+        })),
         Recovery([],[]),Recovery([],[]),Recovery([],[]),Recovery([],[]),Recovery([],[])
       ]))
     ]))
@@ -44,13 +47,16 @@ pub fn input_p1(game:GameKernel,pressed:List(input.Key)) {
     game.p1.attack_map,
     game.p1.p1_side,
     pressed)
+  // |> io.debug
   |> update_p1_input_buffer(game,_)
 }
 
 pub fn pick_state_p1(game:GameKernel) {
+  let p1 = player.update_state(game.p1,game.p1_buffer)
+  io.debug(p1.current_state)
   GameKernel(
     ..game,
-    p1:player.update_state(game.p1,game.p1_buffer)
+    p1: p1
   )
 }
 

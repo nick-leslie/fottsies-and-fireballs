@@ -51,13 +51,13 @@ fn update(game_engine:kernel.GameKernel) {
   raylib.begin_drawing()
   case raylib.should_windows_close() {
     False -> {
-      raylib.get_char_pressed()
       raylib.clear_background()
 
-      get_pressed_keys(game_engine.p1.used_keys)
+      let game_engine = get_pressed_keys(game_engine.p1.used_keys)
       |> kernel.input_p1(game_engine,_)
       |> kernel.pick_state_p1
-      // raylib.draw_texture(game_state,300.0,200.0)
+      //raylib.draw_texture(game_state,300.0,200.0)
+      raylib.end_drawing()
       update(game_engine)
     }
     True -> {

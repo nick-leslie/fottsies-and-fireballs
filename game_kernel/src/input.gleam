@@ -77,15 +77,6 @@ pub fn pick_state(buffer:Buffer,patterns:List(#(List(Input),StateIndex))) {
   top.1
 }
 
-// fn are_inpus_equal(a:Input,b:Input) {
-//   case a,b {
-//     Input(a_dir), Input(b_dir) -> a_dir == b_dir
-//     InputWithAttack(a_dir, a_attack), InputWithAttack(b_dir, b_attack) -> {
-//       a_dir == b_dir && b_attack == a_attack
-//     }
-//     _,_ -> False
-//   }
-// }
 
 pub type Key = Int
 
