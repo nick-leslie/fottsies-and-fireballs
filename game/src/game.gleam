@@ -34,7 +34,7 @@ fn default_attack_map_p1() {
 
 pub fn main() {
   io.println("Hello from game")
-  raylib.init_window(600,400,"please work")
+  raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
   let test_texture = raylib.load_texture("./assets/Sprite-0001.png") |> io.debug
   kernel.new_game_kernel()

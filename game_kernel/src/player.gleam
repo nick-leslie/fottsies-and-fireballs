@@ -102,7 +102,6 @@ pub fn update_state(player:PlayerState,buffer:input.Buffer) {
       let frame = get_current_frame(player)
       case list.find(frame.cancel_options,fn (cancel_index) {cancel_index == proposed_state}) {
         Error(_) -> {
-          io.debug("test")
           advance_frame(player,proposed_state)
         }
         Ok(_) -> {

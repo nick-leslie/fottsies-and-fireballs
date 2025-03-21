@@ -66,13 +66,13 @@ pub fn pick_state(buffer:Buffer,patterns:List(#(List(Input),StateIndex))) {
       }
       [] -> input_to_state
     }
-  } |> list.filter(fn(list) {
+  }|> list.filter(fn(list) {
     case list {
       #([],_state)-> True
       _ -> False
     }
   })
-  |> list.first
+  |> list.last
   |> result.unwrap(#([],0))
   top.1
 }
@@ -102,7 +102,7 @@ pub fn map_input_to_engine(input_map:InputMap(Dir),attack_map:InputMap(Attack),i
         option.Some(any) -> InputWithAttack(new_dire,attack:any)
       }
     }
-    InputWithAttack(new_dire, attack) -> {
+    InputWithAttack(_old_dir, attack) -> {
       InputWithAttack(new_dire,resolve_attack_level(attack,new_attack))
     }
   }

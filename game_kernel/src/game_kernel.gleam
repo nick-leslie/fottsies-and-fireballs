@@ -20,20 +20,33 @@ pub type GameKernel {
 
 pub fn new_game_kernel() {
   //todo we need config files
+  //todo we need to reverse this so special moves are high priority
   let p1 = player.new_player(True,200.0,200.0,
     iv.from_list([
       State("neutral",iv.from_list([Startup([],[1])])),
-      State("forward-quarter-circle",iv.from_list([
-        Startup([],[]),Startup([],[]),Startup([],[]),Startup([],[]),Startup([],[]),
-        Active(hit_boxes:[],hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
+      State("forward-quarter-circle",iv.from_list(list.flatten([
+        Startup([],[]) |> list.repeat(13),
+        [Active(hit_boxes:[],hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
           io.debug("ran active frame")
           player
-        })),
-        Recovery([],[]),Recovery([],[]),Recovery([],[]),Recovery([],[]),Recovery([],[])
-      ]))
-    ]))
-  |> player.add_new_pattern([Input(Down),Input(DownForward),InputWithAttack(Forward,Light)], 1)
-  |> player.add_new_pattern([Input(Down),Input(DownForward),Input(Forward),InputWithAttack(Neutral,Light)], 1)
+        }))],
+        Recovery([],[]) |> list.repeat(5)
+      ]))),
+      State("DP",iv.from_list(list.flatten([
+        Startup([],[]) |> list.repeat(13),
+        [Active(hit_boxes:[],hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
+          io.debug("ran dp active frame")
+          player
+        }))],
+        Recovery([],[]) |> list.repeat(5)
+      ]))),
+    ]),
+  )
+  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down)], 1)
+  |> player.add_new_pattern([InputWithAttack(Neutral,Light),Input(Forward),Input(DownForward),Input(Down)], 1)
+  |> player.add_new_pattern([Input(Forward),InputWithAttack(DownForward,Light),Input(Down)], 1)
+  |> player.add_new_pattern([InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], 2)
+  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], 2)
   let p2 = player.new_player(False,400.0,400.0,
     iv.from_list([
       State("neutral",iv.from_list([Startup([],[])]))
@@ -64,6 +77,7 @@ fn update_p1_input_buffer(kernel:GameKernel,input:input.Input) {
   GameKernel(
     ..kernel,
     p1_buffer:input.update_buffer(kernel.p1_buffer,input)
+    //|> deque.to_list |> io.debug |> deque.from_list
   )
 }
 
