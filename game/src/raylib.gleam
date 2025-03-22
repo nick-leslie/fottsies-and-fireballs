@@ -19,6 +19,10 @@ pub fn clear_background() -> Nil
 @external(javascript, "./raylib_ffi.mjs", "end_drawing")
 pub fn end_drawing() -> Nil
 
+@external(javascript, "./raylib_ffi.mjs", "draw_rectangle_rect")
+pub fn draw_rectangle_rect(rect:player.Rectangle) -> Nil
+
+
 // fps -------
 
 @external(javascript, "./raylib_ffi.mjs", "set_target_fps")

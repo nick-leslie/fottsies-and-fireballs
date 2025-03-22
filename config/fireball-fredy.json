@@ -1,0 +1,77 @@
+{
+  "name": "fire ball fready",
+  "move": [
+    {
+      "name": "forward quarter circle",
+      "patterns": [
+        [
+          "InputWithAttack(Forward,Light)",
+          "Input(DownForward)",
+          "Input(Down)"
+        ],
+        [
+          "InputWithAttack(Neutral,Light)",
+          "Input(Forward)",
+          "Input(DownForward)",
+          "Input(Down)"
+        ]
+      ],
+      "frames": [
+        {
+          "active": [
+            {},
+            {
+              "on-active": "fireball"
+            }
+          ],
+          "recovery": [
+            {
+              "length": 6
+            }
+          ],
+          "startup": [
+            {
+              "length": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dp",
+      "patterns": [
+        [
+          "InputWithAttack(DownForward,Light)",
+          "Input(Down)",
+          "Input(Forward)"
+        ],
+        [
+          "InputWithAttack(Forward,Light)",
+          "Input(DownForward)",
+          "Input(Down)",
+          "Input(Forward)"
+        ]
+      ],
+      "frames": [
+        {
+          "active": [
+            {},
+            {
+              "on-active": "fireball"
+            }
+          ],
+          "recovery": [
+            {
+              "length": 6
+            }
+          ],
+          "startup": [
+            {
+              "length": 14
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

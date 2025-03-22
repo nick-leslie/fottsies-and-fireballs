@@ -1,3 +1,5 @@
+import iv
+import player
 import gleam/result
 import gleam/option
 import gleam/list
@@ -32,39 +34,75 @@ fn default_attack_map_p1() {
   |> dict.insert(key_l,input.Heavy)
 }
 
+pub type GameState{
+  GameState(
+    kernel:kernel.GameKernel,
+    texture_map:dict.Dict(Int,iv.Array(raylib.Texture))
+  )
+}
 pub fn main() {
   io.println("Hello from game")
   raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
   let test_texture = raylib.load_texture("./assets/Sprite-0001.png") |> io.debug
-  kernel.new_game_kernel()
+  let game_kernel = kernel.new_game_kernel()
   |> kernel.update_p1_input_map(default_input_map_p1())
   |> kernel.update_p1_attack_map(default_attack_map_p1())
-  |> update()
+
+  let texture_map = dict.new()
+  |> dict.insert(0,iv.from_list([test_texture]))
+  update(GameState(game_kernel,texture_map))
   raylib.unload_texture(test_texture)
   raylib.close_window()
 }
 
 //todo limit to 60 fps
-fn update(game_engine:kernel.GameKernel) {
+fn update(game_engine:GameState) {
 
   raylib.begin_drawing()
   case raylib.should_windows_close() {
     False -> {
       raylib.clear_background()
 
-      let game_engine = get_pressed_keys(game_engine.p1.used_keys)
-      |> kernel.input_p1(game_engine,_)
-      |> kernel.pick_state_p1
-      //raylib.draw_texture(game_state,300.0,200.0)
+      let game_kernel =
+      get_pressed_keys(game_engine.kernel.p1_controls.used_keys)
+      |> kernel.input_p1(game_engine.kernel,_)
+      |> kernel.run_frame(raylib.check_collison_rect)
+
+
+
+
+      //draw phase
+      let _ = draw_player(game_kernel.p1,game_engine.texture_map)
+      draw_world(game_kernel)
+      draw_collider(game_kernel.p1)
+
       raylib.end_drawing()
-      update(game_engine)
+      update(GameState(..game_engine,kernel:game_kernel))
     }
     True -> {
       raylib.end_drawing()
       game_engine
     }
   }
+}
+
+fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(raylib.Texture))) {
+  use frame_textures <- result.try(dict.get(texture_map,player.current_state))
+  use texture <- result.try(iv.get(frame_textures,player.current_frame))
+  Ok(raylib.draw_texture(texture,player.x,player.y))
+}
+
+fn draw_collider(player:player.PlayerState) {
+  let frame = player.get_current_frame(player)
+  let col = player.collider_to_player_space(player,frame.world_box.box)
+  raylib.draw_rectangle_rect(col)
+}
+
+
+fn draw_world(kernel:kernel.GameKernel) {
+  use col <- list.each(kernel.world_colliders)
+  raylib.draw_rectangle_rect(col.box)
 }
 
 pub fn get_pressed_keys(input_map:List(input.Key)) -> List(input.Key){

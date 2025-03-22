@@ -41,6 +41,10 @@ export function get_fps() {
   return r.GetFPS()
 }
 
+export function draw_rectangle_rect(rect) {
+  r.DrawRectangleRec(rect, r.BLUE)
+}
+
 //texures -----
 export function load_texture(path) {
   return r.LoadTexture(path)
