@@ -5,7 +5,6 @@ export function init_window(screenWidth,screenHeight,title) {
 
 }
 
-
 export function should_windows_close() {
   return r.WindowShouldClose()
 }
@@ -43,6 +42,10 @@ export function get_fps() {
 
 export function draw_rectangle_rect(rect) {
   r.DrawRectangleRec(rect, r.BLUE)
+}
+
+export function draw_line(startPosX, startPosY, endPosX, endPosY) {
+  r.DrawLine(startPosX, startPosY, endPosX, endPosY, r.BLACK)
 }
 
 //texures -----
@@ -89,3 +92,44 @@ export function get_char_pressed() {
 export function check_collison_rect(rec1,rec2) {
   return r.CheckCollisionRecs(rec1, rec2)
 }
+
+
+//------ camera
+
+export function new_cam(offset_x,offset_y,target_x,target_y,rot,zoom) {
+  return {
+    /** Camera offset (displacement from target). (Vector2) */
+    offset: {
+      offset_x,
+      offset_y
+    },
+    /** Camera target (rotation and zoom origin). (Vector2) */
+    target: {
+      target_x,
+      target_y
+    },
+    /** Camera rotation in degrees. (float) */
+    rotation: rot,
+    /** Camera zoom (scaling), should be 1.0f by default. (float) */
+    zoom: zoom
+  }
+}
+
+export function begin_mode_2d(camera) {
+  r.BeginMode2D(camera)
+}
+export function end_mode_2d(camera) {
+  r.EndMode2D(camera)
+}
+
+export function get_world_to_screen2d(pos,camera) {
+  return r.GetWorldToScreen2D(pos, camera)
+}
+export function get_screen_to_world(pos,camera) {
+  return r.GetScreenToWorld2D(pos, camera)
+}
+
+
+
+// Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera);    // Get the screen space position for a 2d camera world space position
+// Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera);    // Get the world space position for a 2d camera screen space position

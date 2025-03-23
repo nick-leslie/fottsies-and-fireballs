@@ -1,10 +1,8 @@
 import gleam/io
-import gleam/result
 import gleam/list
 import gleam/option
 import gleam/dict
 import iv
-import gleam/deque
 import input.{Input,Down,DownForward,Forward,InputWithAttack,Light,Neutral,Back}
 import player.{Startup,State,Active,Recovery}
 //todo this is a bad name
@@ -18,13 +16,13 @@ pub type GameKernel {
   )
 }
 
-
+//todo we need to make world space
 
 pub fn new_game_kernel() {
   //todo we need config files
   //todo we need to reverse this so special moves are high priority
-  let player_col = player.make_player_world_box(#(14.0,10.0),#(5.0,30.0))
-  let p1 = player.new_player(True,200.0,200.0,
+  let player_col = player.make_player_world_box(#(14.0,10.0),#(-10.0,10.0))
+  let p1 = player.new_player(True,-20.0,20.0,
     iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
@@ -36,14 +34,14 @@ pub fn new_game_kernel() {
       State("forward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(1.0,player.velocity.1))
+            player.PlayerState(..player,velocity:#(5.0,player.velocity.1))
           }
           ))
       ])),
       State("backward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(-1.0,player.velocity.1))
+            player.PlayerState(..player,velocity:#(-5.0,player.velocity.1))
           }))
       ])),
       State("forward-quarter-circle",iv.from_list(list.flatten([
@@ -79,8 +77,8 @@ pub fn new_game_kernel() {
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[player.WorldBox(
     player.Rectangle(
-      x:0.0,
-      y:400.0,
+      x:-400.0,
+      y:50.0,
       width:800.0,
       height:600.0
     ), fn(vel) {
@@ -100,7 +98,6 @@ pub fn run_frame(game:GameKernel,col_fn) {
     |> player.add_grav
     |> player.run_world_collisons(game.world_colliders,col_fn)
     |> player.move_player_by_vel
-    ,
     // p2:  game.p2 |> player.run_frame,
   )
 }

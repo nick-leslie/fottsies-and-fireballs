@@ -22,6 +22,9 @@ pub fn end_drawing() -> Nil
 @external(javascript, "./raylib_ffi.mjs", "draw_rectangle_rect")
 pub fn draw_rectangle_rect(rect:player.Rectangle) -> Nil
 
+@external(javascript, "./raylib_ffi.mjs", "draw_line")
+pub fn draw_line(start_pos_x:Float, start_pos_y:Float, end_pos_x:Float, end_pos_y:Float) -> Nil
+
 
 // fps -------
 
@@ -38,7 +41,15 @@ pub fn get_fps() -> Float
 
 // textures ------------------
 
-pub type Texture
+pub type Texture{
+  Texture(
+    id:Int,
+    width:Float,
+    height:Float,
+    mipmaps:Int,
+    format:Int
+  )
+}
 @external(javascript, "./raylib_ffi.mjs", "load_texture")
 pub fn load_texture(path:String) -> Texture
 
@@ -78,3 +89,33 @@ pub fn get_char_pressed()-> Key
 // collisons ----
 @external(javascript, "./raylib_ffi.mjs", "check_collison_rect")
 pub fn check_collison_rect(rec1:player.Rectangle,rec2:player.Rectangle) -> Bool
+
+
+//cam ----
+pub type Vector2 {
+  Vector2(x:Float,y:Float)
+}
+
+pub type Camera {
+  Camera(
+    offset:Vector2,
+    target:Vector2,
+    rotation:Float,
+    zoom:Float
+  )
+}
+
+@external(javascript, "./raylib_ffi.mjs", "new_cam")
+pub fn new_cam(offset_x:Float,offset_y:Float,target_x:Float,target_y:Float,rot:Float,zoom:Float) -> Camera
+
+@external(javascript, "./raylib_ffi.mjs", "begin_mode_2d")
+pub fn begin_mode_2d(cam:Camera) -> Nil
+
+@external(javascript, "./raylib_ffi.mjs", "end_mode_2d")
+pub fn end_mode_2d(cam:Camera) -> Nil
+
+@external(javascript, "./raylib_ffi.mjs", "get_world_to_screen2d")
+pub fn get_world_to_screen2d(pos:Vector2,cam:Camera) -> Vector2
+
+@external(javascript, "./raylib_ffi.mjs", "get_screen_to_world")
+pub fn get_screen_to_world(pos:Vector2,cam:Camera) -> Vector2

@@ -68,16 +68,21 @@ fn update(game_engine:GameState) {
       get_pressed_keys(game_engine.kernel.p1_controls.used_keys)
       |> kernel.input_p1(game_engine.kernel,_)
       |> kernel.run_frame(raylib.check_collison_rect)
+      let cam = raylib.Camera(
+        raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
+        raylib.Vector2(game_kernel.p1.x,game_kernel.p1.y),
+        0.0,
+        1.0
+      )
+      raylib.begin_mode_2d(cam)
+        //draw phase
+        let _ = draw_player(game_kernel.p1,game_engine.texture_map)
+        draw_world(game_kernel)
+        raylib.draw_line(0.0,1000.0,0.0,-1000.0)
+        draw_collider(game_kernel.p1)
 
-
-
-
-      //draw phase
-      let _ = draw_player(game_kernel.p1,game_engine.texture_map)
-      draw_world(game_kernel)
-      draw_collider(game_kernel.p1)
-
-      raylib.end_drawing()
+        raylib.end_mode_2d(cam)
+        raylib.end_drawing()
       update(GameState(..game_engine,kernel:game_kernel))
     }
     True -> {
@@ -90,7 +95,7 @@ fn update(game_engine:GameState) {
 fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(raylib.Texture))) {
   use frame_textures <- result.try(dict.get(texture_map,player.current_state))
   use texture <- result.try(iv.get(frame_textures,player.current_frame))
-  Ok(raylib.draw_texture(texture,player.x,player.y))
+  Ok(raylib.draw_texture(texture,player.x -. texture.width /. 2.0,player.y -. texture.height /. 2.0))
 }
 
 fn draw_collider(player:player.PlayerState) {
