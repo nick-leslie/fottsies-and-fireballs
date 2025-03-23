@@ -16,7 +16,7 @@ pub type PlayerState {
     x:Float,
     y:Float,
     states:iv.Array(State),//todo we may  want to use dicts for this
-    patterns:List(#(List(input.Input),StateIndex)),
+    patterns:List(input.Pattern),
     current_state:Int,
     current_frame:Int,
     blocking:Bool,
@@ -40,9 +40,14 @@ pub fn new_player(p1_side:Bool,x,y,states:iv.Array(State)) -> PlayerState {
 }
 
 
-pub fn add_new_pattern(player:PlayerState,input:List(input.Input),state_index:StateIndex) {
+pub fn add_new_pattern(player:PlayerState,input:List(input.Input),state_index:StateIndex,priority:Int) {
   //this is slower but its a one time thing and its needed for priority
-  let patterns  = list.append(player.patterns,[#(input,state_index)])
+  let patterns  = list.append(player.patterns,[input.Pattern(
+    input,
+    state_index,
+    priority,
+    option.None
+  )])
   PlayerState(..player,patterns:patterns)
 }
 

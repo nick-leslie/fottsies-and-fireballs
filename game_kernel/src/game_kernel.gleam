@@ -40,7 +40,6 @@ pub fn new_game_kernel() {
           }
           ))
       ])),
-
       State("backward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
           Some(fn(player) {
@@ -65,14 +64,14 @@ pub fn new_game_kernel() {
       ]))),
     ]),
   )
-  |> player.add_new_pattern([Input(Neutral)], 0)
-  |> player.add_new_pattern([Input(Forward)], 1)
-  |> player.add_new_pattern([Input(Back)], 2)
-  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down)], 3)
-  |> player.add_new_pattern([InputWithAttack(Neutral,Light),Input(Forward),Input(DownForward),Input(Down)], 3)
-  |> player.add_new_pattern([Input(Forward),InputWithAttack(DownForward,Light),Input(Down)], 3)
-  |> player.add_new_pattern([InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], 4)
-  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], 4)
+  |> player.add_new_pattern([Input(Neutral)], 0,0)
+  |> player.add_new_pattern([Input(Forward)], 1,0)
+  |> player.add_new_pattern([Input(Back)], 2,0)
+  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down)], 3,1)
+  |> player.add_new_pattern([InputWithAttack(Neutral,Light),Input(Forward),Input(DownForward),Input(Down)], 3,1)
+  |> player.add_new_pattern([Input(Forward),InputWithAttack(DownForward,Light),Input(Down)], 3,1)
+  |> player.add_new_pattern([InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], 4,2)
+  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], 4,2)
 
   let p2 = player.new_player(False,400.0,400.0,
     iv.from_list([

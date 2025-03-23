@@ -1,3 +1,5 @@
+import gleam/order
+import gleam/int
 import gleam/io
 import gleam/option
 import gleam/list
@@ -27,6 +29,15 @@ pub type Input {
   InputWithAttack(dir:Dir,attack:Attack)
 }
 
+pub type Pattern {
+  Pattern(
+    pattern:List(Input),
+    state:StateIndex,
+    pritority:Int,
+    compleated_index:option.Option(Int)
+  )
+}
+
 //todo could define a pattern spesific language
 
 
@@ -48,33 +59,56 @@ pub fn update_buffer(buffer:Buffer,input:Input) {
 }
 type StateIndex = Int
 
-pub fn pick_state(buffer:Buffer,patterns:List(#(List(Input),StateIndex))) {
+pub fn pick_state(buffer:Buffer,patterns:List(Pattern)) {
   //algo loop through the buffer disqalifiying states that it cant be
   //then when the buffer has been looped though return the top priority state
   // could I use a tree?
   // //this is bugged because we need to start the list at the next_index-1
-  let top = {
-    use inputs,input <- deque.fold(buffer,patterns)
-    use #(inputs,state) as input_to_state <- list.map(inputs)
-    case inputs {
-      [first,..rest] as no_edit -> {
-        case first == input {
-          //this is were we fail I may need to re architect
-          False -> #(no_edit,state)
-          True -> #(rest,state)
+  let evaluated = {
+    use #(patterns,index),input <- deque.fold(buffer,#(patterns,0))
+    #({
+      use Pattern(inputs,_state,_priority,_compleated) as pattern <- list.map(patterns)
+      case inputs {
+        [first] -> {
+          case first == input {
+            //this is were we fail I may need to re architect
+            False -> pattern
+            True -> Pattern(..pattern,pattern:[],compleated_index:option.Some(index))
+          }
+        }
+        [first,..rest] -> {
+          case first == input {
+            //this is were we fail I may need to re architect
+            False -> pattern
+            True -> Pattern(..pattern,pattern:rest)
+          }
+        }
+        [] -> pattern
+      }
+    },index+1)
+  }.0
+  let top_pattern = {
+    use top_choise,pattern <- list.fold(evaluated,Pattern([],0,0,option.None))
+    case pattern.compleated_index {
+      option.None -> top_choise
+      option.Some(index) -> {
+        case int.compare(top_choise.pritority,pattern.pritority) {
+          order.Eq -> {
+            case top_choise.compleated_index {
+              option.None -> pattern //base case
+              option.Some(top_index) -> case top_index > index {
+                True -> pattern // this move has an equal priority but was picked first
+                False -> top_choise
+              }
+            }
+          }
+          order.Gt -> top_choise // the previous move has a higher priority
+          order.Lt -> pattern// the new move has a higher priority
         }
       }
-      [] -> input_to_state
     }
-  }|> list.filter(fn(list) {
-    case list {
-      #([],_state)-> True
-      _ -> False
-    }
-  })
-  |> list.last
-  |> result.unwrap(#([],0))
-  top.1
+  } 
+  top_pattern.state
 }
 
 
