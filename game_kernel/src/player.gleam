@@ -1,3 +1,4 @@
+import birl
 import gleam/function
 import gleam/io
 import gleam/result
@@ -6,6 +7,10 @@ import iv
 import input
 import gleam/dict
 import gleam/list
+import birl/duration
+import gleam/float
+
+
 
 type StateIndex = Int
 //todo we may ned to split this up to reduce the copying
@@ -119,8 +124,16 @@ pub fn update_state(player:PlayerState,buffer:input.Buffer) {
   } |> run_frame
 }
 
+const grav_max =  10.0
+
 pub fn add_grav(player:PlayerState) {
-  PlayerState(..player,velocity:#(player.velocity.0,10.0))
+  //todo we may want to disable grav
+  case player.velocity.1 <. grav_max {
+    True -> PlayerState(..player,velocity:#(player.velocity.0,player.velocity.1 +. grav_max))
+    False -> {
+      PlayerState(..player,velocity:#(player.velocity.0,grav_max))
+    }
+  }
 }
 
 //todo this is breaking
@@ -159,21 +172,22 @@ pub fn move_player_by_vel(player:PlayerState) {
 }
 
 //--- collisions
+type OnCollionFn = fn (#(Float,Float),PlayerState) -> PlayerState
 
 pub type Collider {
   Hitbox(
     box:Rectangle,
     hit_stun_state:State,
-    hit_stun_vel:fn (#(Float,Float)) -> #(Float,Float),
+    hit_stun_vel:OnCollionFn, // todo refactor
     block_stun_state:State,
-    block_stun_vel:fn (#(Float,Float)) -> #(Float,Float)
+    block_stun_vel:OnCollionFn
   )
   HurtBox(
     box:Rectangle
   )
   WorldBox(
     box:Rectangle,
-    moddify_vel:fn (#(Float,Float)) -> #(Float,Float),
+    on_colison:OnCollionFn,
   )
 }
 
@@ -183,7 +197,7 @@ pub fn make_player_world_box(wh:#(Float,Float),xy:#(Float,Float)) {
     height:wh.1,
     x:xy.0,
     y:xy.1,
-  ),function.identity) // todo this might be bad ish
+  ),fn(_point,player) {player}) // todo this might be bad ish
 }
 
 
@@ -200,12 +214,12 @@ pub type Rectangle {
 pub type CollionInfo {
   HurtCollion(
     hit:Collider,
-    moddify_vel:fn (#(Float,Float)) -> #(Float,Float),
+    moddify_vel:OnCollionFn,
     stun_state:State
   )
   PlayerToWorld(
     player:PlayerState,
-    moddify_vel:fn (#(Float,Float)) -> #(Float,Float)
+    moddify_vel:OnCollionFn
   )
 }
 
@@ -213,19 +227,127 @@ pub fn collider_to_player_space(player:PlayerState,box:Rectangle) {
   Rectangle(..box,x:box.x +. player.x,y:box.y +. player.y)
 }
 
-pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider),colision_fn:fn(Rectangle,Rectangle) -> Bool) {
+pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   let frame = get_current_frame(self)
 
   use player,col <- list.fold(world_boxes,self)
-  let assert WorldBox(box,vel_fn) = col
+  let assert WorldBox(box,on_col) = col
   let player_box_rect= collider_to_player_space(self,frame.world_box.box)
-  case colision_fn(player_box_rect,box) {
-    False -> player
-    True -> {
-      //todo we need to check if moving viea a line would create a collison
-      //or walk from the reverse of the vec back up
-      PlayerState(..player,velocity:vel_fn(player.velocity))
+  // let start = birl.now()
+
+  let may_collide = line_rect_collision(
+    #(player_box_rect.x +. player_box_rect.width /. 2.0,player_box_rect.y +. player_box_rect.height),
+    //we need the devison by 2
+    #(player_box_rect.x +. self.velocity.0,{player_box_rect.y +. player_box_rect.height /. 2.0 } +. self.velocity.1)
+  ,box)
+
+  // io.debug(duration.blur(birl.difference(birl.now(),start)))
+  case may_collide {
+    option.None -> {
+      player
+    } //todo idk if this is right
+    option.Some(point) -> {
+      //this sucks we make so many things
+      let new_player_x = {point.0 -. { frame.world_box.box.width /. 2.0 } -. frame.world_box.box.x}|> echo
+      let new_player_y = {point.1 -. frame.world_box.box.height -. frame.world_box.box.y}|> echo
+      let moved_player = PlayerState(..player,
+        x:new_player_x,
+        y:new_player_y,
+      )
+      let player_box_rect= collider_to_player_space(moved_player,frame.world_box.box)
+
+      let has_collided = collison_rect(player_box_rect,box) |> echo
+      //todo move the colider to the point
+      case has_collided {
+        False -> moved_player
+        True -> {
+          //todo we need to check if moving viea a line would create a collison
+          //or walk from the reverse of the vec back up
+          // moved_player
+          on_col(point,moved_player)
+        }
+      }
     }
+  }
+}
+
+fn collison_rect(rect1:Rectangle,rect2:Rectangle) {
+  rect1.x <=. rect2.x +. rect2.width
+  && rect1.x +. rect1.width >=. rect2.x
+  && rect1.y <=. rect2.y +. rect2.height
+  && rect1.y +. rect1.height >=. rect2.y
+}
+
+
+pub fn line_rect_collision(
+  line_start: #(Float,Float),
+  line_end: #(Float,Float),
+  rect:Rectangle
+) -> option.Option(#(Float,Float)) {
+  let #(x1, y1) = line_start
+  let #(x2, y2) = line_end
+
+  // Calculate the edges of the rectangle
+
+
+  // Check intersection with each side of the rectangle
+  let intersections =
+    [
+      line_line(x1,y1,x2,y2, rect.x,rect.y, rect.x +. rect.width,rect.y), // top
+      line_line(x1,y1,x2,y2, rect.x,rect.y,rect.x, rect.y+.rect.height),    // left
+      line_line(x1,y1,x2,y2, rect.x+.rect.width,rect.y, rect.x+.rect.width,rect.y+.rect.height), // Right
+      line_line(x1,y1,x2,y2, rect.x,rect.y+.rect.height, rect.x+.rect.width,rect.y+.rect.height),   // bot
+    ]
+    |> list.filter_map(function.identity)
+
+  // Return the first intersection point, if any
+  case intersections {
+    [] -> option.None
+    [first, ..] -> option.Some(first)
+  }
+}
+// Helper function to check for intersection with a line segment
+
+
+
+pub fn line_line(
+  x1: Float,
+  y1: Float,
+  x2: Float,
+  y2: Float,
+  x3: Float,
+  y3: Float,
+  x4: Float,
+  y4: Float,
+) -> Result(#(Float,Float),Nil) {
+  let a1 = y2 -. y1
+  let b1 = x1 -. x2
+  let c1 = a1 *. x1 +. b1 *. y1
+  let a2 = y4 -. y3
+  let b2 = x3 -. x4
+  let c2 = a2 *. x3 +. b2 *. y3
+  let det = a1 *. b2 -. a2 *. b1
+
+  case det != 0.0 {
+    True -> {
+      let x = {b2 *. c1 -. b1 *. c2} /. det
+      let y = {a1 *. c2 -. a2 *. c1} /. det
+
+      case
+        x >=. float.min(x1, x2)
+        && x <=. float.max(x1, x2)
+        && x >=. float.min(x3, x4)
+        && x <=. float.max(x3, x4)
+        && y >=. float.min(y1, y2)
+        && y <=. float.max(y1, y2)
+        && y >=. float.min(y3, y4)
+        && y <=. float.max(y3, y4)
+      {
+        True -> Ok(#(x, y))
+        False -> Error(Nil)
+      }
+    }
+    False -> Error(Nil)
   }
 }
 
@@ -244,10 +366,12 @@ fn get_hurt_collisons(self,other,colision_fn:fn(Rectangle,Rectangle) -> Bool) {
       use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
       //todo check perf
       let assert HurtBox(_) as hurt_box = hurt_box
-
       let hurt_box_rect = collider_to_player_space(self,hurt_box.box)
       //todo if this is slow we can check distence in js land
-      case colision_fn(hit_box_rect,hurt_box_rect) {
+      let start = birl.now()
+      let has_collided = colision_fn(hit_box_rect,hurt_box_rect)
+      io.debug(birl.difference(start,birl.now()))
+      case has_collided {
         True -> list.append(colided_list,[
           case self.blocking {
             True -> HurtCollion(hurt_box,hit_box.block_stun_vel,hit_box.block_stun_state)
@@ -260,6 +384,5 @@ fn get_hurt_collisons(self,other,colision_fn:fn(Rectangle,Rectangle) -> Bool) {
     _ -> []
   }
 }
-
 
 //todo may want to seprate this into primatives but like for now we chillen

@@ -67,7 +67,7 @@ fn update(game_engine:GameState) {
       let game_kernel =
       get_pressed_keys(game_engine.kernel.p1_controls.used_keys)
       |> kernel.input_p1(game_engine.kernel,_)
-      |> kernel.run_frame(raylib.check_collison_rect)
+      |> kernel.run_frame()
       let cam = raylib.Camera(
         raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
         raylib.Vector2(game_kernel.p1.x,game_kernel.p1.y),
@@ -79,7 +79,9 @@ fn update(game_engine:GameState) {
         let _ = draw_player(game_kernel.p1,game_engine.texture_map)
         draw_world(game_kernel)
         raylib.draw_line(0.0,1000.0,0.0,-1000.0)
-        draw_collider(game_kernel.p1)
+        game_kernel.p1
+        |> draw_collider()
+        |> draw_vel()
 
         raylib.end_mode_2d(cam)
         raylib.end_drawing()
@@ -98,10 +100,21 @@ fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(rayl
   Ok(raylib.draw_texture(texture,player.x -. texture.width /. 2.0,player.y -. texture.height /. 2.0))
 }
 
+fn draw_vel(player:player.PlayerState) {
+  let frame = player.get_current_frame(player)
+  let player_box_rect= player.collider_to_player_space(player,frame.world_box.box)
+
+  let start = #(player_box_rect.x,player_box_rect.y +. player_box_rect.height)
+  let end = #(player_box_rect.x +. player.velocity.0,{player_box_rect.y +. player_box_rect.height } +. player.velocity.1)
+  raylib.draw_line(start.0,start.1,end.0,end.1)
+  player
+}
+
 fn draw_collider(player:player.PlayerState) {
   let frame = player.get_current_frame(player)
   let col = player.collider_to_player_space(player,frame.world_box.box)
   raylib.draw_rectangle_rect(col)
+  player
 }
 
 

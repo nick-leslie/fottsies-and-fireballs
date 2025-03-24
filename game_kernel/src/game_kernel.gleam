@@ -22,7 +22,7 @@ pub fn new_game_kernel() {
   //todo we need config files
   //todo we need to reverse this so special moves are high priority
   let player_col = player.make_player_world_box(#(14.0,10.0),#(-10.0,10.0))
-  let p1 = player.new_player(True,-20.0,20.0,
+  let p1 = player.new_player(True,0.0,-200.0,
     iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
@@ -77,35 +77,41 @@ pub fn new_game_kernel() {
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[player.WorldBox(
     player.Rectangle(
-      x:-400.0,
-      y:50.0,
-      width:800.0,
-      height:600.0
-    ), fn(vel) {
-      #(vel.0,0.0)
+      x:-100.0,
+      y:-150.0,
+      width:1000.0,
+      height:50.0
+    ), fn(_point,player) {
+      //todo we may need to move this later but for now this hack works
+      // let new_y = y
+      player.y |> echo
+      player.PlayerState(..player,
+        // y:new_y,
+        velocity:#(player.velocity.0,0.0)
+      )
     }
   )])
 }
 
 
 
-pub fn run_frame(game:GameKernel,col_fn) {
+pub fn run_frame(game:GameKernel) {
   //todo we may need to run each step for each player one by one
   GameKernel(
     ..game,
     p1:  game.p1
     |> player.update_state(game.p1_controls.buffer)
     |> player.add_grav
-    |> player.run_world_collisons(game.world_colliders,col_fn)
+    |> player.run_world_collisons(game.world_colliders)
     |> player.move_player_by_vel
     // p2:  game.p2 |> player.run_frame,
   )
 }
 
-pub fn run_world_collions(game:GameKernel,colfn) {
+pub fn run_world_collions(game:GameKernel) {
   GameKernel(
     ..game,
-    p1:  game.p1 |> player.run_world_collisons(game.world_colliders,colfn),
+    p1:  game.p1 |> player.run_world_collisons(game.world_colliders),
     // p2:  game.p2 |> player.run_frame,
   )
 }
