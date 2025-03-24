@@ -97,7 +97,7 @@ fn update(game_engine:GameState) {
 fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(raylib.Texture))) {
   use frame_textures <- result.try(dict.get(texture_map,player.current_state))
   use texture <- result.try(iv.get(frame_textures,player.current_frame))
-  Ok(raylib.draw_texture(texture,player.x -. texture.width /. 2.0,player.y -. texture.height /. 2.0))
+  Ok(raylib.draw_texture_ex(texture,player.x -. texture.width /. 2.0,player.y -. texture.height /. 2.0,0.0,1.0,raylib.ray_white))
 }
 
 fn draw_vel(player:player.PlayerState) {

@@ -4,4 +4,5 @@
 erl_crash.dump
 node_modules
 game
+game.prod
 main

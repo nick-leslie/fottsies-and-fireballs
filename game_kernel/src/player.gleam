@@ -1,3 +1,4 @@
+import gleam/order
 import birl
 import gleam/function
 import gleam/io
@@ -80,23 +81,26 @@ pub type Frame {
     hurt_boxes:List(Collider),
     world_box:Collider,
     cancel_options:List(StateIndex),
+    on_frame:option.Option(fn (PlayerState) -> PlayerState),
   )
   Active (
     hurt_boxes:List(Collider),
     world_box:Collider,
     cancel_options:List(StateIndex),
-    on_active:option.Option(fn (PlayerState) -> PlayerState), // takes in the world
+    on_frame:option.Option(fn (PlayerState) -> PlayerState),
     hit_boxes:List(Collider),
   )
   Recovery(
     hurt_boxes:List(Collider),
     world_box:Collider,
     cancel_options:List(StateIndex),
+    on_frame:option.Option(fn (PlayerState) -> PlayerState),
   )
   HitStun(
     hurt_boxes:List(Collider),
     world_box:Collider,
     cancel_options:List(StateIndex), //cancle into tech states
+    on_frame:option.Option(fn (PlayerState) -> PlayerState),
   )
 }
 
@@ -152,14 +156,9 @@ fn advance_frame(player:PlayerState,next_state:StateIndex) {
 fn run_frame(player:PlayerState) {
   //todo resolve collisons and physics here
   let current_frame = get_current_frame(player)
-  case current_frame {
-    Active(_hurt_boxes,_world_boxes, _cansels, action, _hit_boxes) -> {
-      case action {
-        option.None -> player
-        option.Some(action) -> action(player)
-      }
-    }
-    _ -> player
+  case current_frame.on_frame {
+    option.None -> player
+    option.Some(on_frame) -> on_frame(player)
   }
 }
 
@@ -227,6 +226,7 @@ pub fn collider_to_player_space(player:PlayerState,box:Rectangle) {
   Rectangle(..box,x:box.x +. player.x,y:box.y +. player.y)
 }
 
+//todo theres a bug here and we need to extract some stuff rn
 pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   let frame = get_current_frame(self)
 
@@ -236,9 +236,10 @@ pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   // let start = birl.now()
 
   //todo we need  to take the x dir and start the may colide point at that loc
-  let width_mod = case player.velocity.0 >=. 0.0 {
-    True -> player_box_rect.width
-    False -> 0.0
+  let width_mod = case float.compare(player.velocity.0, 0.0) {
+    order.Eq -> 0.0
+    order.Gt -> player_box_rect.width
+    order.Lt -> 0.0
   }
   let may_collide = line_rect_collision(
     #(player_box_rect.x +. width_mod,player_box_rect.y +. player_box_rect.height),
@@ -251,16 +252,17 @@ pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
       player
     } //todo idk if this is right
     option.Some(point) -> {
-      //this sucks we make so many things
-      let new_player_x = {point.0 -. width_mod -. frame.world_box.box.x}|> echo
-      let new_player_y = {point.1 -. frame.world_box.box.height -. frame.world_box.box.y}|> echo
+      //because we are setting the collion twice we phase throuhg the world
+      let new_player_x = {point.0 -. width_mod -. frame.world_box.box.x}
+      //its because we are adding the y of the wall
+      let new_player_y = {point.1 -. frame.world_box.box.height -. frame.world_box.box.y}
       let moved_player = PlayerState(..player,
         x:new_player_x,
         y:new_player_y,
       )
-      let player_box_rect= collider_to_player_space(moved_player,frame.world_box.box)
+      let player_box_rect = collider_to_player_space(moved_player,frame.world_box.box)
 
-      let has_collided = collison_rect(player_box_rect,box) |> echo
+      let has_collided = collison_rect(player_box_rect,box)
       //todo move the colider to the point
       case has_collided {
         False -> moved_player

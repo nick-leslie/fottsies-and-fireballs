@@ -1,5 +1,21 @@
 import player
 
+pub type Color {
+  Color(
+    r:Int,
+    g:Int,
+    b:Int,
+    a:Int,
+  )
+}
+
+pub const ray_white = Color(
+  r:245,
+  g:245,
+  b:245,
+  a:255
+)
+
 @external(javascript, "./raylib_ffi.mjs", "init_window")
 pub fn init_window(width:Int,heigth:Int,title:String) -> Nil
 
@@ -55,6 +71,9 @@ pub fn load_texture(path:String) -> Texture
 
 @external(javascript, "./raylib_ffi.mjs", "draw_texture")
 pub fn draw_texture(texture:Texture,pos_x:Float,pos_y:Float) -> Nil
+
+@external(javascript, "./raylib_ffi.mjs", "draw_texture_ex")
+pub fn draw_texture_ex(texture:Texture,pos_x:Float,pos_y:Float,rot:Float,scale:Float,color:Color) -> Nil
 
 @external(javascript, "./raylib_ffi.mjs", "unload_texture")
 pub fn unload_texture(texture:Texture) -> Nil

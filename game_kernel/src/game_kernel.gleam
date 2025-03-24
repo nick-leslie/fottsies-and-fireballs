@@ -21,44 +21,51 @@ pub type GameKernel {
 pub fn new_game_kernel() {
   //todo we need config files
   //todo we need to reverse this so special moves are high priority
-  let player_col = player.make_player_world_box(#(14.0,10.0),#(-10.0,10.0))
+  let player_col = player.make_player_world_box(#(40.0,10.0),#(-20.0,20.0))
   let p1 = player.new_player(True,0.0,-200.0,
     iv.from_list([
       State("neutral",iv.from_list([
-        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
+        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
             player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
-          }
-          ))
+          })
+        )
       ])),
       State("forward",iv.from_list([
-        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
+        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
             player.PlayerState(..player,velocity:#(5.0,player.velocity.1))
-          }
-          ))
+          })
+        )
       ])),
       State("backward",iv.from_list([
-        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.
+        Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
             player.PlayerState(..player,velocity:#(-5.0,player.velocity.1))
-          }))
+          })
+        )
       ])),
       State("forward-quarter-circle",iv.from_list(list.flatten([
-        Startup([],player_col,[]) |> list.repeat(13),
-        [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
+        [Startup([],player_col,[],option.Some(fn(player) {
+          player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
+        }))],
+        Startup([],player_col,[],option.None) |> list.repeat(12),
+        [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
           io.debug("ran active frame")
           player
         }))],
-        Recovery([],player_col,[]) |> list.repeat(5)
+        Recovery([],player_col,[],option.None) |> list.repeat(5)
       ]))),
       State("DP",iv.from_list(list.flatten([
-        Startup([],player_col,[]) |> list.repeat(13),
-        [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_active:option.Some(fn(player) {
+        [Startup([],player_col,[],option.Some(fn(player) {
+          player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
+        }))],
+        Startup([],player_col,[],option.None) |> list.repeat(12),
+        [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
           io.debug("ran dp active frame")
           player
         }))],
-        Recovery([],player_col,[]) |> list.repeat(5)
+        Recovery([],player_col,[],option.None) |> list.repeat(5)
       ]))),
     ]),
   )
@@ -73,25 +80,9 @@ pub fn new_game_kernel() {
 
   let p2 = player.new_player(False,400.0,400.0,
     iv.from_list([
-      State("neutral",iv.from_list([Startup([],player_col,[])]))
+      State("neutral",iv.from_list([Startup([],player_col,[],option.None)]))
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[
-    player.WorldBox(
-      player.Rectangle(
-        x:-100.0,
-        y:-150.0,
-        width:1000.0,
-        height:50.0
-      ), fn(_point,player) {
-        //todo we may need to move this later but for now this hack works
-        // let new_y = y
-        player.y |> echo
-        player.PlayerState(..player,
-          // y:new_y,
-          velocity:#(player.velocity.0,0.0)
-        )
-      }
-    ),
     player.WorldBox(
       player.Rectangle(
         x:-100.0,
@@ -101,10 +92,37 @@ pub fn new_game_kernel() {
       ), fn(_point,player) {
         //todo we may need to move this later but for now this hack works
         // let new_y = y
-        player.y |> echo
         player.PlayerState(..player,
           // y:new_y,
           velocity:#(0.0,player.velocity.1)
+        )
+      }
+    ),
+    player.WorldBox(
+      player.Rectangle(
+        x:900.0,
+        y:-200.0,
+        width:50.0,
+        height:1000.0
+      ), fn(_point,player) {
+        player.PlayerState(..player,
+          // y:new_y,
+          velocity:#(0.0,player.velocity.1)
+        )
+      }
+    ),
+    player.WorldBox(
+      player.Rectangle(
+        x:-100.0,
+        y:-150.0,
+        width:1000.0,
+        height:50.0
+      ), fn(_point,player) {
+        //todo we may need to move this later but for now this hack works
+        // let new_y = y
+        player.PlayerState(..player,
+          // y:new_y,
+          velocity:#(player.velocity.0,0.0)
         )
       }
     ),

@@ -55,6 +55,11 @@ export function load_texture(path) {
 export function draw_texture(texture,posX,posY) {
   r.DrawTexture(texture,posX,posY,r.RAYWHITE)
 }
+
+export function draw_texture_ex(texture, x,y, rotation, scale, tint) {
+  r.DrawTextureEx(texture, {x:x,y:y}, rotation, scale, tint)
+}
+
 export function unload_texture(texture) {
   r.UnloadTexture(texture)
 }
