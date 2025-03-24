@@ -75,22 +75,40 @@ pub fn new_game_kernel() {
     iv.from_list([
       State("neutral",iv.from_list([Startup([],player_col,[])]))
     ]))
-  GameKernel(p1,new_controls(),p2,new_controls(),[player.WorldBox(
-    player.Rectangle(
-      x:-100.0,
-      y:-150.0,
-      width:1000.0,
-      height:50.0
-    ), fn(_point,player) {
-      //todo we may need to move this later but for now this hack works
-      // let new_y = y
-      player.y |> echo
-      player.PlayerState(..player,
-        // y:new_y,
-        velocity:#(player.velocity.0,0.0)
-      )
-    }
-  )])
+  GameKernel(p1,new_controls(),p2,new_controls(),[
+    player.WorldBox(
+      player.Rectangle(
+        x:-100.0,
+        y:-150.0,
+        width:1000.0,
+        height:50.0
+      ), fn(_point,player) {
+        //todo we may need to move this later but for now this hack works
+        // let new_y = y
+        player.y |> echo
+        player.PlayerState(..player,
+          // y:new_y,
+          velocity:#(player.velocity.0,0.0)
+        )
+      }
+    ),
+    player.WorldBox(
+      player.Rectangle(
+        x:-100.0,
+        y:-200.0,
+        width:50.0,
+        height:1000.0
+      ), fn(_point,player) {
+        //todo we may need to move this later but for now this hack works
+        // let new_y = y
+        player.y |> echo
+        player.PlayerState(..player,
+          // y:new_y,
+          velocity:#(0.0,player.velocity.1)
+        )
+      }
+    ),
+  ])
 }
 
 

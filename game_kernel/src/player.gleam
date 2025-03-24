@@ -235,12 +235,16 @@ pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   let player_box_rect= collider_to_player_space(self,frame.world_box.box)
   // let start = birl.now()
 
+  //todo we need  to take the x dir and start the may colide point at that loc
+  let width_mod = case player.velocity.0 >=. 0.0 {
+    True -> player_box_rect.width
+    False -> 0.0
+  }
   let may_collide = line_rect_collision(
-    #(player_box_rect.x +. player_box_rect.width /. 2.0,player_box_rect.y +. player_box_rect.height),
+    #(player_box_rect.x +. width_mod,player_box_rect.y +. player_box_rect.height),
     //we need the devison by 2
-    #(player_box_rect.x +. self.velocity.0,{player_box_rect.y +. player_box_rect.height /. 2.0 } +. self.velocity.1)
+    #(player_box_rect.x +. width_mod +. self.velocity.0,{player_box_rect.y +. player_box_rect.height /. 2.0 } +. self.velocity.1)
   ,box)
-
   // io.debug(duration.blur(birl.difference(birl.now(),start)))
   case may_collide {
     option.None -> {
@@ -248,7 +252,7 @@ pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
     } //todo idk if this is right
     option.Some(point) -> {
       //this sucks we make so many things
-      let new_player_x = {point.0 -. { frame.world_box.box.width /. 2.0 } -. frame.world_box.box.x}|> echo
+      let new_player_x = {point.0 -. width_mod -. frame.world_box.box.x}|> echo
       let new_player_y = {point.1 -. frame.world_box.box.height -. frame.world_box.box.y}|> echo
       let moved_player = PlayerState(..player,
         x:new_player_x,
