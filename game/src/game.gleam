@@ -40,12 +40,14 @@ pub type GameState{
     texture_map:dict.Dict(Int,iv.Array(raylib.Texture))
   )
 }
+const sprite_scale = 3.0
+const cam_zoom = 0.50
 pub fn main() {
   io.println("Hello from game")
   raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
   let test_texture = raylib.load_texture("./assets/Sprite-0001.png") |> io.debug
-  let game_kernel = kernel.new_game_kernel()
+  let game_kernel = kernel.new_game_kernel(sprite_scale)
   |> kernel.update_p1_input_map(default_input_map_p1())
   |> kernel.update_p1_attack_map(default_attack_map_p1())
 
@@ -72,7 +74,7 @@ fn update(game_engine:GameState) {
         raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
         raylib.Vector2(game_kernel.p1.x,game_kernel.p1.y),
         0.0,
-        1.0
+        cam_zoom
       )
       raylib.begin_mode_2d(cam)
         //draw phase
@@ -80,6 +82,11 @@ fn update(game_engine:GameState) {
         draw_world(game_kernel)
         raylib.draw_line(0.0,1000.0,0.0,-1000.0)
         game_kernel.p1
+        |> draw_collider()
+        |> draw_vel()
+        let _ = draw_player(game_kernel.p2,game_engine.texture_map)
+
+        game_kernel.p2
         |> draw_collider()
         |> draw_vel()
 
@@ -94,10 +101,18 @@ fn update(game_engine:GameState) {
   }
 }
 
+
+
 fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(raylib.Texture))) {
   use frame_textures <- result.try(dict.get(texture_map,player.current_state))
   use texture <- result.try(iv.get(frame_textures,player.current_frame))
-  Ok(raylib.draw_texture_ex(texture,player.x -. texture.width /. 2.0,player.y -. texture.height /. 2.0,0.0,1.0,raylib.ray_white))
+  Ok(raylib.draw_texture_ex(texture,
+    {player.x -. {texture.width *. sprite_scale}  /. 2.0 },
+    {player.y -. {texture.height  *. sprite_scale} /. 2.0},
+    0.0,
+    sprite_scale,
+    raylib.ray_white
+  ))
 }
 
 fn draw_vel(player:player.PlayerState) {

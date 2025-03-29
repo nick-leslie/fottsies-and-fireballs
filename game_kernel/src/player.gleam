@@ -16,6 +16,8 @@ import physics/vector2
 
 
 //todo if things get nasty then we do this
+const grav_max =  10.0
+const full_screen_max = 100 // this is the maximum distence that we are able to walk from the other player
 
 
 type StateIndex = Int
@@ -23,7 +25,7 @@ type StateIndex = Int
 // right now we have player taking the world as a generic so we can do things like spawn fireballs
 pub type PlayerState {
   PlayerState(
-    p1_side:Bool,
+    p1_side:Float,
     x:Float,
     y:Float,
     states:iv.Array(State),//todo we may  want to use dicts for this
@@ -36,7 +38,7 @@ pub type PlayerState {
   )
 }
 
-pub fn new_player(p1_side:Bool,x,y,states:iv.Array(State)) -> PlayerState {
+pub fn new_player(side p1_side:Float,x x,y y,states states:iv.Array(State)) -> PlayerState {
   PlayerState(
     p1_side:p1_side,
     x:x,
@@ -134,7 +136,6 @@ pub fn update_state(player:PlayerState,buffer:input.Buffer) {
   } |> run_frame
 }
 
-const grav_max =  10.0
 
 pub fn add_grav(player:PlayerState) {
   //todo we may want to disable grav
@@ -165,6 +166,22 @@ fn run_frame(player:PlayerState) {
   case current_frame.on_frame {
     option.None -> player
     option.Some(on_frame) -> on_frame(player)
+  }
+}
+//todo fix me
+pub fn check_side(self:PlayerState,other:PlayerState) {
+  //todo this is bad and I hate it
+  case self.x >=. 0.0 {
+    False -> case float.compare(self.x -. other.x,0.0) {
+      order.Eq -> PlayerState(..self,x: self.x +. 1.0,p1_side:-1.0)
+      order.Gt -> PlayerState(..self,p1_side:1.0)
+      order.Lt -> PlayerState(..self,p1_side:-1.0)
+    }
+    True ->  case float.compare(self.x -. other.x,0.0) {
+      order.Eq -> PlayerState(..self,x: self.x +. 1.0,p1_side:1.0)
+      order.Gt -> PlayerState(..self,p1_side:-1.0)
+      order.Lt -> PlayerState(..self,p1_side:-1.0)
+    }
   }
 }
 

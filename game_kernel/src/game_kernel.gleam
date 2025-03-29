@@ -27,11 +27,11 @@ pub type GameKernel {
 
 //todo config
 
-pub fn new_game_kernel() {
+pub fn new_game_kernel(sprite_scale) {
   //todo we need config files
-  //todo we need to reverse this so special moves are high priority
-  let player_col = player.make_player_world_box(#(40.0,10.0),#(-20.0,20.0))
-  let p1 = player.new_player(True,0.0,-200.0,
+  //todo this sprite scale stuff is stinky but its easy will make cleaner soon
+  let player_col = player.make_player_world_box(#(40.0 *. sprite_scale,10.0 *.sprite_scale),#(-20.0 *. sprite_scale,20.0*. sprite_scale))
+  let p1 = player.new_player(1.0,0.0*. sprite_scale,-200.0*. sprite_scale,
     iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
@@ -43,14 +43,14 @@ pub fn new_game_kernel() {
       State("forward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(5.0,player.velocity.1))
+            player.PlayerState(..player,velocity:#(5.0 *. player.p1_side,player.velocity.1))
           })
         )
       ])),
       State("backward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(-5.0,player.velocity.1))
+            player.PlayerState(..player,velocity:#(-5.0 *. player.p1_side,player.velocity.1))
           })
         )
       ])),
@@ -87,14 +87,14 @@ pub fn new_game_kernel() {
   |> player.add_new_pattern(input:[InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], state_index:4,priority:2)
   |> player.add_new_pattern(input:[InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], state_index:4,priority:2)
 
-  let p2 = player.new_player(False,400.0,400.0,
-    iv.from_list([
+  let p2 = player.new_player(side:-1.0,x:100.0 *. sprite_scale,y:-200.0 *.sprite_scale,
+   states:iv.from_list([
       State("neutral",iv.from_list([Startup([],player_col,[],option.None)]))
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[
     player.WorldBox(
       Rectangle(
-        x:-100.0,
+        x:-120.0,
         y:-200.0,
         width:50.0,
         height:1000.0
@@ -154,6 +154,8 @@ pub fn run_frame(game:GameKernel) {
   let p1 = p1 |> player.move_player_by_vel
   let p2 = p2 |> player.move_player_by_vel
 
+  let p1 = p1 |> player.check_side(p2)
+  let p2 = p2 |> player.check_side(p1)
 
   GameKernel(
     ..game,
@@ -164,10 +166,15 @@ pub fn run_frame(game:GameKernel) {
 }
 
 pub fn input_p1(game:GameKernel,pressed:List(input.Key)) {
+  let side = case game.p1.p1_side {
+    1.0 -> True
+    -1.0 -> False
+    _ -> panic as "we should never be any value other than true falls"
+  }
   input.map_input_to_engine(
     game.p1_controls.input_map,
     game.p1_controls.attack_map,
-    game.p1.p1_side,
+    side,
     pressed)
   // |> io.debug
   |> update_p1_input_buffer(game,_)
