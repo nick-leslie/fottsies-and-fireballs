@@ -1,4 +1,4 @@
-import player
+import physics/basics
 
 pub type Color {
   Color(
@@ -36,7 +36,7 @@ pub fn clear_background() -> Nil
 pub fn end_drawing() -> Nil
 
 @external(javascript, "./raylib_ffi.mjs", "draw_rectangle_rect")
-pub fn draw_rectangle_rect(rect:player.Rectangle) -> Nil
+pub fn draw_rectangle_rect(rect:basics.Rectangle) -> Nil
 
 @external(javascript, "./raylib_ffi.mjs", "draw_line")
 pub fn draw_line(start_pos_x:Float, start_pos_y:Float, end_pos_x:Float, end_pos_y:Float) -> Nil
@@ -107,7 +107,7 @@ pub fn get_char_pressed()-> Key
 
 // collisons ----
 @external(javascript, "./raylib_ffi.mjs", "check_collison_rect")
-pub fn check_collison_rect(rec1:player.Rectangle,rec2:player.Rectangle) -> Bool
+pub fn check_collison_rect(rec1:basics.Rectangle,rec2:basics.Rectangle) -> Bool
 
 
 //cam ----

@@ -5,6 +5,8 @@ import gleam/dict
 import iv
 import input.{Input,Down,DownForward,Forward,InputWithAttack,Light,Neutral,Back}
 import player.{Startup,State,Active,Recovery}
+import physics/basics.{Rectangle, type Rectangle}
+
 //todo this is a bad name
 pub type GameKernel {
   GameKernel(
@@ -16,7 +18,14 @@ pub type GameKernel {
   )
 }
 
-//todo we need to make world space
+//order of operaions per frame
+// 1. pick state
+// 2. check cancel options
+// 3. swap state or continue state
+// 4. run frame this updateds properties like velocity and spawns fireballs
+// 5.
+
+//todo config
 
 pub fn new_game_kernel() {
   //todo we need config files
@@ -69,14 +78,14 @@ pub fn new_game_kernel() {
       ]))),
     ]),
   )
-  |> player.add_new_pattern([Input(Neutral)], 0,0)
-  |> player.add_new_pattern([Input(Forward)], 1,0)
-  |> player.add_new_pattern([Input(Back)], 2,0)
-  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down)], 3,1)
-  |> player.add_new_pattern([InputWithAttack(Neutral,Light),Input(Forward),Input(DownForward),Input(Down)], 3,1)
-  |> player.add_new_pattern([Input(Forward),InputWithAttack(DownForward,Light),Input(Down)], 3,1)
-  |> player.add_new_pattern([InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], 4,2)
-  |> player.add_new_pattern([InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], 4,2)
+  |> player.add_new_pattern(input:[Input(Neutral)],state_index: 0, priority:0)
+  |> player.add_new_pattern(input:[Input(Forward)], state_index:1,priority:0)
+  |> player.add_new_pattern(input:[Input(Back)], state_index:2,priority:0)
+  |> player.add_new_pattern(input:[InputWithAttack(Forward,Light),Input(DownForward),Input(Down)], state_index:3,priority:1)
+  |> player.add_new_pattern(input:[InputWithAttack(Neutral,Light),Input(Forward),Input(DownForward),Input(Down)], state_index:3,priority:1)
+  |> player.add_new_pattern(input:[Input(Forward),InputWithAttack(DownForward,Light),Input(Down)], state_index:3,priority:1)
+  |> player.add_new_pattern(input:[InputWithAttack(DownForward,Light),Input(Down),Input(Forward)], state_index:4,priority:2)
+  |> player.add_new_pattern(input:[InputWithAttack(Forward,Light),Input(DownForward),Input(Down),Input(Forward)], state_index:4,priority:2)
 
   let p2 = player.new_player(False,400.0,400.0,
     iv.from_list([
@@ -84,7 +93,7 @@ pub fn new_game_kernel() {
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[
     player.WorldBox(
-      player.Rectangle(
+      Rectangle(
         x:-100.0,
         y:-200.0,
         width:50.0,
@@ -99,7 +108,7 @@ pub fn new_game_kernel() {
       }
     ),
     player.WorldBox(
-      player.Rectangle(
+      Rectangle(
         x:900.0,
         y:-200.0,
         width:50.0,
@@ -112,7 +121,7 @@ pub fn new_game_kernel() {
       }
     ),
     player.WorldBox(
-      player.Rectangle(
+      Rectangle(
         x:-100.0,
         y:-150.0,
         width:1000.0,
@@ -133,21 +142,23 @@ pub fn new_game_kernel() {
 
 pub fn run_frame(game:GameKernel) {
   //todo we may need to run each step for each player one by one
-  GameKernel(
-    ..game,
-    p1:  game.p1
-    |> player.update_state(game.p1_controls.buffer)
-    |> player.add_grav
-    |> player.run_world_collisons(game.world_colliders)
-    |> player.move_player_by_vel
-    // p2:  game.p2 |> player.run_frame,
-  )
-}
+  let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
+  let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
 
-pub fn run_world_collions(game:GameKernel) {
+  let p1 = p1 |> player.run_world_collisons(game.world_colliders)
+  let p2 = p2 |> player.run_world_collisons(game.world_colliders)
+
+  // let p1 = player.run_hurt_collions(p1,p2)
+  // let p1 = player.run_hurt_collions(p2,p1)
+
+  let p1 = p1 |> player.move_player_by_vel
+  let p2 = p2 |> player.move_player_by_vel
+
+
   GameKernel(
     ..game,
-    p1:  game.p1 |> player.run_world_collisons(game.world_colliders),
+    p1:  p1,
+    p2:  p2
     // p2:  game.p2 |> player.run_frame,
   )
 }
