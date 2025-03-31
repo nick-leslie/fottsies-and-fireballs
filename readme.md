@@ -24,30 +24,30 @@ Server - this is where the netcode will run
 
 ### plans and todo
 
-[x] Input reader for non-charge special moves
-[x] Character state management
-[] moving collisions
-[] Sprite sheet support
-[] projectile support
-[] charge moves
-[] health
-[] player 2
-[] Camera work
-[] supers
-[] ui
+- [x] Input reader for non-charge special moves
+- [x] Character state management
+- [ ] moving collisions
+- [ ] Sprite sheet support
+- [ ] projectile support
+- [ ] charge moves
+- [ ] health
+- [ ] player 2
+- [ ] Camera work
+- [ ] supers
+- [ ] ui
 
 
 Post core game engine
-[] hitbox editor
-[] character config files
-[] Controller support
-[] Controller remaps
+- [ ] hitbox editor
+- [ ] character config files
+- [ ] Controller support
+- [ ] Controller remaps
 
 netcode plans
-[] server side rollback
-[] peer to peer option
-[] Match-making server framework
-[] steam?
+- [ ] server side rollback
+- [ ] peer to peer option
+- [ ] Match-making server framework
+- [ ] steam?
 
 ### limitations and why
 Gleam compiles to javascript so it runs javascript locally.
