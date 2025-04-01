@@ -1,3 +1,5 @@
+import gleamy/bench
+import physics/collisons
 import gleam/io
 import gleam/list
 import gleam/option
@@ -5,7 +7,25 @@ import gleam/dict
 import iv
 import input.{Input,Down,DownForward,Forward,InputWithAttack,Light,Neutral,Back}
 import player.{Startup,State,Active,Recovery}
-import physics/basics.{Rectangle, type Rectangle}
+import raylib.{Rectangle, type Rectangle}
+
+pub fn main() {
+  let a = raylib.Rectangle(1.0,0.0,1.0,0.0)
+  let b = raylib.Rectangle(1.0,0.0,1.5,0.0)
+  collisons.rect_rect_gjk(a,b) |> io.debug
+  // let fun = fn (list:List(raylib.Rectangle)) {
+  //   use #(a,b) <- list.map(list.window_by_2(list))
+  //   collisons.rect_rect_gjk(a,b)
+  // }
+  // bench.run([
+  //   bench.Input("simple", [a,b]),
+  // ],
+  // [bench.Function("rect",fun)],
+  // [bench.Duration(1000), bench.Warmup(100)]
+  // )
+  // |> bench.table([bench.IPS, bench.Min, bench.P(99)])
+  // |> io.println
+}
 
 //todo this is a bad name
 pub type GameKernel {
@@ -92,34 +112,35 @@ pub fn new_game_kernel(sprite_scale) {
       State("neutral",iv.from_list([Startup([],player_col,[],option.None)]))
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[
-    player.WorldBox(
-      Rectangle(
-        x:-120.0,
-        y:-200.0,
-        width:50.0,
-        height:1000.0
-      ), fn(_point,player) {
-        //todo we may need to move this later but for now this hack works
-        // let new_y = y
-        player.PlayerState(..player,
-          // y:new_y,
-          velocity:#(0.0,player.velocity.1)
-        )
-      }
-    ),
-    player.WorldBox(
-      Rectangle(
-        x:900.0,
-        y:-200.0,
-        width:50.0,
-        height:1000.0
-      ), fn(_point,player) {
-        player.PlayerState(..player,
-          // y:new_y,
-          velocity:#(0.0,player.velocity.1)
-        )
-      }
-    ),
+    // player.WorldBox(
+    //   Rectangle(
+    //     x:-120.0,
+    //     y:-200.0,
+    //     width:50.0,
+    //     height:1000.0
+    //   ), fn(_point,player) {
+    //     //todo we may need to move this later but for now this hack works
+    //     // let new_y = y
+    //     io.debug("gamng")
+    //     player.PlayerState(..player,
+    //       // y:new_y,
+    //       velocity:#(0.0,player.velocity.1)
+    //     )
+    //   }
+    // ),
+    // player.WorldBox(
+    //   Rectangle(
+    //     x:900.0,
+    //     y:-200.0,
+    //     width:50.0,
+    //     height:1000.0
+    //   ), fn(_point,player) {
+    //     player.PlayerState(..player,
+    //       // y:new_y,
+    //       velocity:#(0.0,player.velocity.1)
+    //     )
+    //   }
+    // ),
     player.WorldBox(
       Rectangle(
         x:-100.0,
@@ -145,7 +166,7 @@ pub fn run_frame(game:GameKernel) {
   let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
   let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
 
-  let p1 = p1 |> player.run_world_collisons(game.world_colliders)
+  let p1 = p1 |> player.new_world_col(game.world_colliders)
   let p2 = p2 |> player.run_world_collisons(game.world_colliders)
 
   // let p1 = player.run_hurt_collions(p1,p2)

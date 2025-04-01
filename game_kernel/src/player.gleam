@@ -10,9 +10,10 @@ import gleam/dict
 import gleam/list
 import birl/duration
 import gleam/float
-import physics/basics.{Rectangle, type Rectangle}
+import raylib.{Rectangle, type Rectangle}
 import physics/collisons
 import physics/vector2
+import physics/basics
 
 
 //todo if things get nasty then we do this
@@ -220,7 +221,10 @@ pub fn make_player_world_box(wh:#(Float,Float),xy:#(Float,Float)) {
     height:wh.1,
     x:xy.0,
     y:xy.1,
-  ),fn(_point,player) {player}) // todo this might be bad ish
+  ),fn(_point,player) {
+    io.debug("gaming")
+    player
+  }) // todo this might be bad ish
 }
 
 
@@ -240,6 +244,19 @@ pub type CollionInfo {
 
 pub fn collider_to_player_space(player:PlayerState,box:Rectangle) {
   Rectangle(..box,x:box.x +. player.x,y:box.y +. player.y)
+}
+
+pub fn new_world_col(self:PlayerState,world_boxes:List(Collider)) {
+  let frame = get_current_frame(self)
+  use player,col <- list.fold(world_boxes,self)
+  let assert WorldBox(box,on_col) = col
+
+  let player_body = basics.RiggdBody(vector2.Vector2(player.x,player.y),vector2.from_tuple(player.velocity))
+  let box_body = basics.RiggdBody(vector2.Vector2(box.x,box.y),vector2.Vector2(0.0,0.0))
+  case collisons.moving_box_collision(frame.world_box.box,player_body,box,box_body) {
+    option.None -> player
+    option.Some(point) -> on_col(vector2.to_tuple(point),player)
+  }
 }
 
 //todo theres a bug here and we need to extract some stuff rn

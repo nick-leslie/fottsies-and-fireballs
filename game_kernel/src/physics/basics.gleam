@@ -1,15 +1,5 @@
 import physics/vector2
 
-
-pub type Rectangle {
-  Rectangle(
-    width:Float,
-    height:Float,
-    x:Float,
-    y:Float
-  )
-}
-
 //todo refactor with this
 pub type RiggdBody {
   RiggdBody(

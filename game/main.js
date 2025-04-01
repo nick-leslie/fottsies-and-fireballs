@@ -1,5 +1,5 @@
 import r from "raylib"
-import { should_windows_close } from "./src/raylib_ffi.mjs"
+import { should_windows_close } from "../raylib/src/raylib_ffi.mjs"
 
 // Initialization
 // --------------------------------------------------------------------------------------

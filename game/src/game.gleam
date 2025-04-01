@@ -20,6 +20,9 @@ pub const key_j = 74
 pub const key_k = 75
 pub const key_l = 76
 
+pub const key_p = 80
+pub const key_n = 78
+
 fn default_input_map_p1() {
   dict.new()
   |> dict.insert(key_w,input.Up)
@@ -37,7 +40,8 @@ fn default_attack_map_p1() {
 pub type GameState{
   GameState(
     kernel:kernel.GameKernel,
-    texture_map:dict.Dict(Int,iv.Array(raylib.Texture))
+    texture_map:dict.Dict(Int,iv.Array(raylib.Texture)),
+    paused:Bool
   )
 }
 const sprite_scale = 3.0
@@ -53,9 +57,15 @@ pub fn main() {
 
   let texture_map = dict.new()
   |> dict.insert(0,iv.from_list([test_texture]))
-  update(GameState(game_kernel,texture_map))
+  update(GameState(game_kernel,texture_map,True))
   raylib.unload_texture(test_texture)
   raylib.close_window()
+}
+
+fn game_update(game_engine:GameState) {
+  get_pressed_keys(game_engine.kernel.p1_controls.used_keys)
+  |> kernel.input_p1(game_engine.kernel,_)
+  |> kernel.run_frame()
 }
 
 //todo limit to 60 fps
@@ -65,11 +75,18 @@ fn update(game_engine:GameState) {
   case raylib.should_windows_close() {
     False -> {
       raylib.clear_background()
+      let game_engine = case raylib.is_key_pressed(key_p) {
+        False -> game_engine
+        True -> GameState(..game_engine,paused:!game_engine.paused)
+      }
+       let game_kernel = case game_engine.paused {
+        False -> game_update(game_engine)
+        True -> case raylib.is_key_down(key_n) {
+          True -> game_update(game_engine)
+          False -> game_engine.kernel
+        }
 
-      let game_kernel =
-      get_pressed_keys(game_engine.kernel.p1_controls.used_keys)
-      |> kernel.input_p1(game_engine.kernel,_)
-      |> kernel.run_frame()
+      }
       let cam = raylib.Camera(
         raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
         raylib.Vector2(game_kernel.p1.x,game_kernel.p1.y),
