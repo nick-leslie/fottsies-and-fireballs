@@ -22,6 +22,9 @@ pub const ray_white = Color(
   a:255
 )
 
+pub const ray_blue = Color(r: 0, g: 121, b: 241, a: 255 )
+
+
 @external(javascript, "./raylib_ffi.mjs", "init_window")
 pub fn init_window(width:Int,heigth:Int,title:String) -> Nil
 
@@ -41,6 +44,8 @@ pub fn clear_background() -> Nil
 @external(javascript, "./raylib_ffi.mjs", "end_drawing")
 pub fn end_drawing() -> Nil
 
+@external(javascript, "./raylib_ffi.mjs", "draw_rectangle")
+pub fn draw_rectangle(x:Float,y:Float,width:Float,height:Float,color:Color) -> Nil
 @external(javascript, "./raylib_ffi.mjs", "draw_rectangle_rect")
 pub fn draw_rectangle_rect(rect:Rectangle) -> Nil
 

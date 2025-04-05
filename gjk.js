@@ -80,7 +80,7 @@
   return triangleCase(simplex);
   default:
   return false; // Should not happen in this implementation (max 3 points)
-  }
+  } 
  }
 
 

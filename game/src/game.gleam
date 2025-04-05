@@ -124,8 +124,8 @@ fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(rayl
   use frame_textures <- result.try(dict.get(texture_map,player.current_state))
   use texture <- result.try(iv.get(frame_textures,player.current_frame))
   Ok(raylib.draw_texture_ex(texture,
-    {player.x -. {texture.width *. sprite_scale}  /. 2.0 },
-    {player.y -. {texture.height  *. sprite_scale} /. 2.0},
+    {player.x -. { {texture.width *. sprite_scale}  /. 2.0} },
+    {player.y -. {{texture.height  *. sprite_scale} /. 2.0} },
     0.0,
     sprite_scale,
     raylib.ray_white
@@ -145,14 +145,16 @@ fn draw_vel(player:player.PlayerState) {
 fn draw_collider(player:player.PlayerState) {
   let frame = player.get_current_frame(player)
   let col = player.collider_to_player_space(player,frame.world_box.box)
-  raylib.draw_rectangle_rect(col)
+  //this is because math is centered but render is right allighend
+  // raylib.draw_rectangle_rect(col |> echo)
+  raylib.draw_rectangle(col.x-.{col.width /. 2.0},col.y-.{col.height /. 2.0},col.width,col.height,raylib.ray_blue)
   player
 }
 
 
 fn draw_world(kernel:kernel.GameKernel) {
   use col <- list.each(kernel.world_colliders)
-  raylib.draw_rectangle_rect(col.box)
+  raylib.draw_rectangle(col.box.x-.{col.box.width /. 2.0},col.box.y-.{col.box.height /. 2.0},col.box.width,col.box.height,raylib.ray_blue)
 }
 
 pub fn get_pressed_keys(input_map:List(input.Key)) -> List(input.Key){

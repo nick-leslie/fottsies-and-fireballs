@@ -40,6 +40,10 @@ export function get_fps() {
   return r.GetFPS()
 }
 
+export function draw_rectangle(posX,posY,width,height,color) {
+  r.DrawRectangle(posX, posY, width, height, color)
+}
+
 export function draw_rectangle_rect(rect) {
   r.DrawRectangleRec(rect, r.BLUE)
 }

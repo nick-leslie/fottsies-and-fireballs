@@ -215,7 +215,7 @@ pub type Collider {
   )
 }
 
-pub fn make_player_world_box(wh:#(Float,Float),xy:#(Float,Float)) {
+pub fn make_player_world_box(wh wh:#(Float,Float),xy xy:#(Float,Float)) {
   WorldBox(Rectangle(
     width:wh.0,
     height:wh.1,
@@ -254,8 +254,8 @@ pub fn new_world_col(self:PlayerState,world_boxes:List(Collider)) {
   let player_body = basics.RiggdBody(vector2.Vector2(player.x,player.y),vector2.from_tuple(player.velocity))
   let box_body = basics.RiggdBody(vector2.Vector2(box.x,box.y),vector2.Vector2(0.0,0.0))
   case collisons.moving_box_collision(frame.world_box.box,player_body,box,box_body) {
-    option.None -> player
-    option.Some(point) -> on_col(vector2.to_tuple(point),player)
+    Error(err) -> player
+    Ok(point) -> on_col(vector2.to_tuple(point),player)
   }
 }
 

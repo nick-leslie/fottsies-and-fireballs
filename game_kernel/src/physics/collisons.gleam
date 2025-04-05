@@ -48,13 +48,13 @@ fn gjk_loop(perams:GJKPerams) {
       case vector2.dot(new_point,dir) <=. 0.0 {
         True -> Error("No collision (new point not past the origin)")
         False -> {
-          let simplex = list.append(perams.simplex,[new_point]) |> echo
+          let simplex = list.append(perams.simplex,[new_point])
           //todo we want to simplify this by making the return logic less nested
           case simplex {
             [zero, one] -> {
               let #(sim,col) = line_case(one,zero)
               case col {
-                True ->  Ok(sim) //todo return point
+                True ->  Ok(sim) |> echo //todo return point
                 False -> gjk_loop(GJKPerams(..perams,
                    itter:perams.itter+1,
                    simplex: sim
@@ -64,7 +64,7 @@ fn gjk_loop(perams:GJKPerams) {
             [zero, one,two] -> {
               let #(sim,col) = triangle_case(two,zero,one)
               case col {
-                True -> Ok(sim) // todo return point
+                True -> Ok(sim) |> echo // todo return point
                 False -> gjk_loop(GJKPerams(..perams,
                   itter:perams.itter+1,
                   simplex: sim
@@ -86,7 +86,7 @@ pub fn line_case(a:Vector2,b:Vector2) {
   let ab_dot_ao = vector2.dot(ab, ao)
   let ab_dot_ab = vector2.dot(ab, ab)
   case ab_dot_ao <=. 0.0 {
-    True -> #([a],True)
+    True -> #([a],False)
     False -> case ab_dot_ao >=. ab_dot_ab {
       False -> #([a,b],True)
       True -> {
@@ -126,24 +126,35 @@ fn point_support(dir:Vector2,points:List(Vector2)) {
 }
 
 pub fn rect_rect_gjk(a:Rectangle,b:Rectangle) {
+  a |> echo
+  b |> echo
   let a_support = fn (dir) {
     point_support(dir,[
-      Vector2(a.x,a.y),
-      Vector2(a.x +. a.width,a.y),
-      Vector2(a.x, a.y+.a.height),
-      Vector2(a.x +. a.width, a.y+.a.height),
-    ])
+      Vector2(a.x +. {a.width /. 2.0 },a.y  -. { a.height /. 2.0}),
+      Vector2(a.x -. {a.width /. 2.0 },a.y  -. { a.height /. 2.0}),
+      Vector2(a.x +. {a.width /. 2.0 }, a.y +. { a.height /. 2.0}),
+      Vector2(a.x -. {a.width /. 2.0 }, a.y +. { a.height /. 2.0}),
+    ] |> echo)
   }
   let b_support = fn (dir) {
     point_support(dir,[
-      Vector2(b.x,b.y),
-      Vector2(b.x +. b.width,a.y),
-      Vector2(b.x, b.y+.b.height),
-      Vector2(b.x +. b.width, b.y+.b.height),
-    ])
+      Vector2(b.x +. {b.width /. 2.0 }, b.y -. { b.height /. 2.0}),
+      Vector2(b.x -. {b.width /. 2.0 }, b.y -. { b.height /. 2.0}),
+      Vector2(b.x +. {b.width /. 2.0 }, b.y +. { b.height /. 2.0}),
+      Vector2(b.x -. {b.width /. 2.0 }, b.y +. { b.height /. 2.0}),
+    ] |> echo)
 
   }
   gjk(a_support,b_support)
+}
+
+fn points_from_rect(rect:Rectangle) {
+  [
+    Vector2(rect.x,rect.y),
+    Vector2(rect.x +. rect.width,rect.y),
+    Vector2(rect.x, rect.y+.rect.height),
+    Vector2(rect.x +. rect.width, rect.y+.rect.height),
+  ]
 }
 
 //return the two riddged bodys at the point were the collion occured
@@ -151,29 +162,38 @@ pub fn moving_box_collision(
   a_box:Rectangle,
   a_body:RiggdBody,
   b_box:Rectangle,
-  b_body:RiggdBody,) {
+  b_body:RiggdBody,) -> Result(Vector2, String) {
+  let a_box =collider_to_body_space(a_box,a_body) |> echo
+  let b_box =collider_to_body_space(b_box,b_body) |> echo
 
-
-    // let relitive_var = sub(a_body.vel,b_body.vel) |> io.debug
-    // raylib.draw_rectangle_rect(minkowski_rect)
-    // let col = line_rect_collision(Vector2(0.0,0.0),relitive_var,minkowski_rect) |> io.debug
-    // case col {
-    //   option.None -> option.None
-    //   option.Some(point) -> option.Some(point)
-    // }
-        //}
-      // True -> {
-      //   let relitive_var = sub(a_body.vel,b_body.vel)
-
-      // }
-    // }
-    //todo advanced collion
-
+  let a_support = fn (dir) {
+    point_support(dir,list.append(
+      points_from_rect(a_box),
+      points_from_rect(collider_next_pos(a_box,a_body)),
+    ))
+  }
+  let b_support = fn (dir) {
+    point_support(dir,list.append(
+      points_from_rect(b_box),
+      points_from_rect(collider_next_pos(b_box,b_body)),
+    ))
+  }
+  case gjk(a_support,b_support) {
+    Error(err) -> Error(err)
+    Ok(point) -> {
+      io.debug("gaming")
+       Ok(Vector2(0.0,0.0))
+    }
+  }
 }
 
 
 pub fn collider_to_body_space(box:Rectangle,body:RiggdBody) {
   Rectangle(..box,x:box.x +. body.pos.x,y:box.y +. body.pos.y)
+}
+
+pub fn collider_next_pos(box:Rectangle,body:RiggdBody) {
+  Rectangle(..box,x:box.x +. body.vel.x,y:box.y +. body.vel.y)
 }
 
 

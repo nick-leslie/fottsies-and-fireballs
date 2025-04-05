@@ -1,4 +1,4 @@
-import gleamy/bench
+// import gleamy/bench
 import physics/collisons
 import gleam/io
 import gleam/list
@@ -50,9 +50,9 @@ pub type GameKernel {
 pub fn new_game_kernel(sprite_scale) {
   //todo we need config files
   //todo this sprite scale stuff is stinky but its easy will make cleaner soon
-  let player_col = player.make_player_world_box(#(40.0 *. sprite_scale,10.0 *.sprite_scale),#(-20.0 *. sprite_scale,20.0*. sprite_scale))
-  let p1 = player.new_player(1.0,0.0*. sprite_scale,-200.0*. sprite_scale,
-    iv.from_list([
+  let player_col = player.make_player_world_box(xy:#(0.0 *. sprite_scale,20.0 *.sprite_scale),wh:#(50.0 *. sprite_scale,10.0*. sprite_scale))
+  let p1 = player.new_player(side: 1.0,x:0.0*. sprite_scale,y:200.0*. sprite_scale,
+    states:iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
@@ -143,8 +143,8 @@ pub fn new_game_kernel(sprite_scale) {
     // ),
     player.WorldBox(
       Rectangle(
-        x:-100.0,
-        y:-150.0,
+        x:0.0,
+        y:700.0,
         width:1000.0,
         height:50.0
       ), fn(_point,player) {
