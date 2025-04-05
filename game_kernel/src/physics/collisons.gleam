@@ -24,17 +24,20 @@ type GJKPerams {
     b_support:Support,
     itter:Int,
     max_itter:Int,
+    dir:Vector2,
     simplex:List(Vector2)
   )
 }
 
 fn gjk(a_support:Support,b_support:Support) {
-  let simplex = [support(Vector2(1.0,0.0),a_support,b_support)]
+  let first = support(Vector2(1.0,0.0),a_support,b_support)
+  let simplex = [first]
   let perams = GJKPerams(
     a_support: ,
     b_support: ,
     itter: 0,
     max_itter: 100,
+    dir: vector2.inverse(first),
     simplex: )
   gjk_loop(perams)
 }
@@ -42,38 +45,38 @@ fn gjk(a_support:Support,b_support:Support) {
 fn gjk_loop(perams:GJKPerams) {
   case perams.itter > perams.max_itter {
     False -> {
-      use last <- result.try(result.replace_error(list.last(perams.simplex),"No last item in simplex list something went wrong"))
-      let dir = vector2.inverse(last)
-      let new_point = support(dir,perams.a_support,perams.b_support)
-      case vector2.dot(new_point,dir) <=. 0.0 {
+      let new_point = support(perams.dir,perams.a_support,perams.b_support) |>echo
+      case vector2.dot(new_point,perams.dir) |> echo <. 0.0 {
         True -> Error("No collision (new point not past the origin)")
         False -> {
           let simplex = list.append(perams.simplex,[new_point])
           //todo we want to simplify this by making the return logic less nested
           case simplex {
             [zero, one] -> {
-              let #(sim,col) = line_case(one,zero)
-              case col {
-                True ->  Ok(sim) |> echo //todo return point
-                False -> gjk_loop(GJKPerams(..perams,
-                   itter:perams.itter+1,
-                   simplex: sim
-                 )) |> echo
-              }
+              let #(sim,dir) = line_case(zero,one)
+                gjk_loop(GJKPerams(..perams,
+                  itter:perams.itter+1,
+                  simplex: sim,
+                  dir:
+                ))
             }
             [zero, one,two] -> {
-              let #(sim,col) = triangle_case(two,zero,one)
-              case col {
-                True -> Ok(sim) |> echo // todo return point
-                False -> gjk_loop(GJKPerams(..perams,
+              let triangle = triangle_case(zero,one,two)
+              case triangle {
+                Ok(sim) -> {
+                  perams |> echo
+                  Ok(sim) |> echo
+                } // todo return point
+                Error(#(sim,dir)) -> gjk_loop(GJKPerams(..perams,
                   itter:perams.itter+1,
-                  simplex: sim
+                  simplex: sim,
+                  dir:,
                 )) |> echo
               }
             }
             _ -> Error("no collion")
           }
-        }
+          }
       }
     }
     True -> Error("max itter depth reached may not be acurate")
@@ -83,31 +86,26 @@ fn gjk_loop(perams:GJKPerams) {
 pub fn line_case(a:Vector2,b:Vector2) {
   let ab = Vector2( x: b.x -. a.x, y: b.y -. a.y )
   let ao = Vector2( x: a.x *. -1.0, y: a.y *. -1.0 )
-  let ab_dot_ao = vector2.dot(ab, ao)
-  let ab_dot_ab = vector2.dot(ab, ab)
-  case ab_dot_ao <=. 0.0 {
-    True -> #([a],False)
-    False -> case ab_dot_ao >=. ab_dot_ab {
-      False -> #([a,b],True)
-      True -> {
-        #([b],False)
-      }
-    }
+  case vector2.dot(ab, ao) >. 0.0 { // same dir
+    True -> #([a,b],vector2.cross(vector2.cross(ab,ao),ab) |> echo) // change direction
+    False -> #([a],ao)
   }
 }
 pub fn triangle_case(a:Vector2,b:Vector2,c:Vector2) {
   let ab = Vector2( x: b.x -. a.x, y: b.y -. a.y )
   let ac = Vector2(x: c.x -. a.x, y: c.y -. a.y )
   let ao = Vector2(x: a.x *. -1.0, y: a.y *. -1.0)
-
-  let ab_perp = Vector2(x: ab.y *. -1.0, y: ab.x ) // Perpendicular to AB, pointing outwards
-  case vector2.dot(ab_perp,ao) >. 0.0 {
-    True -> #([b,a],False)
+  let ab_perp =vector2.cross(vector2.cross(ac,ab),ab)
+  let ac_perp =vector2.cross(vector2.cross(ab,ac),ac)
+  // let ab_perp = Vector2(x: ab.y *. -1.0, y: ab.x ) // Perpendicular to AB, pointing outwards
+  case vector2.dot(ac_perp,ao) >. 0.0 {
+    True -> {
+      Error(#([a,b],ab_perp))
+    }
     False -> {
-      let ac_perp = Vector2( x: ac.y *. -1.0, y: ac.x )
-      case vector2.dot(ac_perp,ao) <. 0.0 {
-        True -> #([c,a],False)
-        False -> #([c,b,a],True)
+      case vector2.dot(ac_perp,ao) >. 0.0 {
+        True -> Error(#([a,c],ac_perp))
+        False -> Ok([a,b,c])
       }
     }
   }
@@ -126,15 +124,13 @@ fn point_support(dir:Vector2,points:List(Vector2)) {
 }
 
 pub fn rect_rect_gjk(a:Rectangle,b:Rectangle) {
-  a |> echo
-  b |> echo
   let a_support = fn (dir) {
     point_support(dir,[
       Vector2(a.x +. {a.width /. 2.0 },a.y  -. { a.height /. 2.0}),
       Vector2(a.x -. {a.width /. 2.0 },a.y  -. { a.height /. 2.0}),
       Vector2(a.x +. {a.width /. 2.0 }, a.y +. { a.height /. 2.0}),
       Vector2(a.x -. {a.width /. 2.0 }, a.y +. { a.height /. 2.0}),
-    ] |> echo)
+    ])
   }
   let b_support = fn (dir) {
     point_support(dir,[
@@ -142,7 +138,7 @@ pub fn rect_rect_gjk(a:Rectangle,b:Rectangle) {
       Vector2(b.x -. {b.width /. 2.0 }, b.y -. { b.height /. 2.0}),
       Vector2(b.x +. {b.width /. 2.0 }, b.y +. { b.height /. 2.0}),
       Vector2(b.x -. {b.width /. 2.0 }, b.y +. { b.height /. 2.0}),
-    ] |> echo)
+    ])
 
   }
   gjk(a_support,b_support)
@@ -163,8 +159,8 @@ pub fn moving_box_collision(
   a_body:RiggdBody,
   b_box:Rectangle,
   b_body:RiggdBody,) -> Result(Vector2, String) {
-  let a_box =collider_to_body_space(a_box,a_body) |> echo
-  let b_box =collider_to_body_space(b_box,b_body) |> echo
+  let a_box =collider_to_body_space(a_box,a_body)
+  let b_box =collider_to_body_space(b_box,b_body)
 
   let a_support = fn (dir) {
     point_support(dir,list.append(

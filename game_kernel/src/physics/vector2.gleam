@@ -29,6 +29,15 @@ pub fn dot(a:Vector2, b:Vector2) {
  a.x *. b.x +. a.y *. b.y
 }
 
+pub fn cross(a:Vector2,b:Vector2) {
+  Vector2(
+    x: a.y *. 0.0 -. 0.0 *. b.y,
+    y: 0.0 *. b.x -. a.x *. 0.0,
+  )
+}
+
+
+
 pub fn sub(a:Vector2,b:Vector2) {
   Vector2(
     x: a.x -. b.x,

@@ -80,7 +80,7 @@
   return triangleCase(simplex);
   default:
   return false; // Should not happen in this implementation (max 3 points)
-  } 
+  }
  }
 
 
@@ -121,36 +121,33 @@
  }
 
 
- /**
-  * Handles the triangle case (simplex contains three points).
-  * Determines if the origin is contained within the triangle formed by the three points.
-  *
-  * @param {Vec2[]} simplex - Array containing three points.
-  * @returns {boolean} True if the origin is within the triangle.
-  */
  function triangleCase(simplex) {
   let a = simplex[2];
   let b = simplex[1];
   let c = simplex[0];
 
-
   let ab = { x: b.x - a.x, y: b.y - a.y };
   let ac = { x: c.x - a.x, y: c.y - a.y };
   let ao = { x: -a.x, y: -a.y };
-
 
   // 1. Check region AB
   let abPerp = { x: -ab.y, y: ab.x }; // Perpendicular to AB, pointing outwards
   if (dotProduct(abPerp, ao) > 0) {
   // Origin is outside AB, reject point C
-  simplex.shift(); //Remove c from simplex array
+  simplex.shift(); // Remove c from simplex array
   return false;
   }
+
+  //Reassign values of points in the simplex because c might have been removed
+   a = simplex[1];
+   b = simplex[0];
+   ab = { x: b.x - a.x, y: b.y - a.y };
+   ao = { x: -a.x, y: -a.y };
 
 
   // 2. Check region AC
   let acPerp = { x: -ac.y, y: ac.x }; // Perpendicular to AC, pointing outwards
-  if (dotProduct(acPerp, ao) < 0) {
+  if (dotProduct(acPerp, ao) > 0) {
   // Origin is outside AC, reject point B
   simplex.splice(1,1); // Remove b from simplex array
   return false;
@@ -160,6 +157,7 @@
   // Origin is inside the triangle
   return true;
  }
+
 
 
  // Example usage (assuming you have defined support functions)
@@ -219,10 +217,11 @@ function point_support(dir, points) {
 
    return furthest_point;
  }
-
- const rectA = { width: 1,height:1,  x: 1, y: 1  };
- const rectB = { width: 1,height:1,  x: 0, y: 0  };
- console.log(rect_to_points(rectA))
+const sprite_scale = 3.0
+const rectA = { width: 10 * sprite_scale,height:10*sprite_scale,  x: 10*sprite_scale, y: 200.0 * sprite_scale  };
+const rectB = { width: 1000.0,height:50.0,  x: 0, y: 1000.0  };
+console.log(rect_to_points(rectA))
+console.log(rect_to_points(rectB))
 console.log(point_support({x:0.0,y:-1.0},rect_to_points(rectA)))
 
  function rect_to_points(rect) {
