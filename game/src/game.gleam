@@ -1,3 +1,4 @@
+import birl/duration
 import iv
 import player
 import gleam/result
@@ -57,7 +58,7 @@ pub fn main() {
 
   let texture_map = dict.new()
   |> dict.insert(0,iv.from_list([test_texture]))
-  update(GameState(game_kernel,texture_map,True))
+  update(GameState(game_kernel,texture_map,False))
   raylib.unload_texture(test_texture)
   raylib.close_window()
 }
@@ -79,24 +80,31 @@ fn update(game_engine:GameState) {
         False -> game_engine
         True -> GameState(..game_engine,paused:!game_engine.paused)
       }
+      let cam = raylib.Camera(
+        raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
+        raylib.Vector2(game_engine.kernel.p1.body.pos.x,game_engine.kernel.p1.body.pos.y),
+        0.0,
+        cam_zoom
+      )
+      raylib.begin_mode_2d(cam)
        let game_kernel = case game_engine.paused {
-        False -> game_update(game_engine)
+        False -> {
+          let start = birl.now()
+          let game = game_update(game_engine)
+          birl.difference(birl.now(),start)
+          |> duration.accurate_decompose
+          // |> echo
+          game
+        }
         True -> case raylib.is_key_down(key_n) {
           True -> game_update(game_engine)
           False -> game_engine.kernel
         }
 
       }
-      let cam = raylib.Camera(
-        raylib.Vector2(800.0 /. 2.0,600.0 /. 2.0),
-        raylib.Vector2(game_kernel.p1.x,game_kernel.p1.y),
-        0.0,
-        cam_zoom
-      )
-      raylib.begin_mode_2d(cam)
         //draw phase
         let _ = draw_player(game_kernel.p1,game_engine.texture_map)
-        draw_world(game_kernel)
+        // draw_world(game_kernel)
         raylib.draw_line(0.0,1000.0,0.0,-1000.0)
         game_kernel.p1
         |> draw_collider()
@@ -124,8 +132,8 @@ fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(rayl
   use frame_textures <- result.try(dict.get(texture_map,player.current_state))
   use texture <- result.try(iv.get(frame_textures,player.current_frame))
   Ok(raylib.draw_texture_ex(texture,
-    {player.x -. { {texture.width *. sprite_scale}  /. 2.0} },
-    {player.y -. {{texture.height  *. sprite_scale} /. 2.0} },
+    {player.body.pos.x -. { {texture.width *. sprite_scale}  /. 2.0} },
+    {player.body.pos.y -. {{texture.height  *. sprite_scale} /. 2.0} },
     0.0,
     sprite_scale,
     raylib.ray_white
@@ -137,7 +145,7 @@ fn draw_vel(player:player.PlayerState) {
   let player_box_rect= player.collider_to_player_space(player,frame.world_box.box)
 
   let start = #(player_box_rect.x,player_box_rect.y +. player_box_rect.height)
-  let end = #(player_box_rect.x +. player.velocity.0,{player_box_rect.y +. player_box_rect.height } +. player.velocity.1)
+  let end = #(player_box_rect.x +. player.body.vel.x,{player_box_rect.y +. player_box_rect.height } +. player.body.vel.y)
   raylib.draw_line(start.0,start.1,end.0,end.1)
   player
 }
