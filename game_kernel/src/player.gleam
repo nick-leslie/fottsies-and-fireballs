@@ -27,14 +27,12 @@ type StateIndex = Int
 pub type PlayerState {
   PlayerState(
     p1_side:Float,
-    x:Float,
-    y:Float,
+    body: basics.RiggdBody,
     states:iv.Array(State),//todo we may  want to use dicts for this
     patterns:List(input.Pattern),
     current_state:Int,
     current_frame:Int,
     blocking:Bool,
-    velocity:#(Float,Float),
     charge:Int
   )
 }
@@ -42,14 +40,12 @@ pub type PlayerState {
 pub fn new_player(side p1_side:Float,x x,y y,states states:iv.Array(State)) -> PlayerState {
   PlayerState(
     p1_side:p1_side,
-    x:x,
-    y:y,
+    body:basics.RiggdBody(vector2.Vector2(x,y),vector2.zero()),
     states:states,
     patterns:list.new(),
     current_state:0,
     current_frame:0,
     blocking:False,
-    velocity:#(0.0,0.0),
     charge:0
   )
 }
@@ -140,10 +136,14 @@ pub fn update_state(player:PlayerState,buffer:input.Buffer) {
 
 pub fn add_grav(player:PlayerState) {
   //todo we may want to disable grav
-  case player.velocity.1 <. grav_max {
-    True -> PlayerState(..player,velocity:#(player.velocity.0,player.velocity.1 +. grav_max))
+  case player.body.vel.y <. grav_max {
+    True -> PlayerState(..player,body:
+      basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(0.0,grav_max)
+      )))
     False -> {
-      PlayerState(..player,velocity:#(player.velocity.0,grav_max))
+      PlayerState(..player,body:
+        basics.RiggdBody(..player.body,vel:vector2.Vector2(player.body.vel.x,10.0)
+        ))
     }
   }
 }
@@ -172,14 +172,16 @@ fn run_frame(player:PlayerState) {
 //todo fix me
 pub fn check_side(self:PlayerState,other:PlayerState) {
   //todo this is bad and I hate it
-  case self.x >=. 0.0 {
-    False -> case float.compare(self.x -. other.x,0.0) {
-      order.Eq -> PlayerState(..self,x: self.x +. 1.0,p1_side:-1.0)
+  let self_body = self.body
+  let other_body = other.body
+  case self_body.pos.x >=. 0.0 {
+    False -> case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
+      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(0.0,1.0))),p1_side:-1.0)
       order.Gt -> PlayerState(..self,p1_side:1.0)
       order.Lt -> PlayerState(..self,p1_side:-1.0)
     }
-    True ->  case float.compare(self.x -. other.x,0.0) {
-      order.Eq -> PlayerState(..self,x: self.x +. 1.0,p1_side:1.0)
+    True ->  case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
+      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(0.0,1.0))),p1_side:1.0)
       order.Gt -> PlayerState(..self,p1_side:-1.0)
       order.Lt -> PlayerState(..self,p1_side:-1.0)
     }
@@ -192,7 +194,7 @@ pub fn check_side(self:PlayerState,other:PlayerState) {
 
 pub fn move_player_by_vel(player:PlayerState) {
 
-  PlayerState(..player,x:player.x +. player.velocity.0,y:player.y +. player.velocity.1)
+  PlayerState(..player,body:basics.RiggdBody(..player.body,pos:vector2.add(player.body.pos,player.body.vel)))
 }
 
 //--- collisions
@@ -243,75 +245,31 @@ pub type CollionInfo {
 }
 
 pub fn collider_to_player_space(player:PlayerState,box:Rectangle) {
-  Rectangle(..box,x:box.x +. player.x,y:box.y +. player.y)
+  Rectangle(..box,x:box.x +. player.body.pos.x,y:box.y +. player.body.pos.y)
 }
 
-pub fn new_world_col(self:PlayerState,world_boxes:List(Collider)) {
-  let frame = get_current_frame(self)
-  use player,col <- list.fold(world_boxes,self)
-  let assert WorldBox(box,on_col) = col
-
-  let player_body = basics.RiggdBody(vector2.Vector2(player.x,player.y),vector2.from_tuple(player.velocity))
-  let box_body = basics.RiggdBody(vector2.Vector2(box.x,box.y),vector2.Vector2(0.0,0.0))
-  case collisons.moving_box_collision(frame.world_box.box,player_body,box,box_body) {
-    Error(err) -> player
-    Ok(point) -> on_col(vector2.to_tuple(point),player)
-  }
-}
-
-//todo theres a bug here and we need to extract some stuff rn
 pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   let frame = get_current_frame(self)
-
   use player,col <- list.fold(world_boxes,self)
-  let player_box = collider_to_player_space(self,frame.world_box.box)
   let assert WorldBox(box,on_col) = col
 
-  //todo we need  to take the x dir and start the may colide point at that loc
-  let width_mod = case float.compare(player.velocity.0, 0.0) {
-    order.Eq -> 0.0
-    order.Gt -> player_box.width
-    order.Lt -> 0.0
-  }
-  let may_collide = collisons.line_rect_collision(
-    vector2.from_tuple(#(player_box.x +. width_mod,player_box.y +. player_box.height)),
-    vector2.from_tuple(#(player_box.x +. width_mod +. self.velocity.0,{player_box.y +. player_box.height /. 2.0 } +. self.velocity.1))
-  ,box)
-  case may_collide {
-    option.None -> {
-      let has_collided = collisons.collison_rect(player_box,box)
-      case has_collided {
-        False -> player
-        True -> {
-          on_col(#(player_box.x,player_box.y),player)
-        }
-      }
-    } //todo idk if this is right
-    option.Some(vector2.Vector2(x,y)) -> {
-      //because we are setting the collion twice we phase throuhg the world
-      let new_player_x = {x -. width_mod -. frame.world_box.box.x}
-      //its because we are adding the y of the wall
-      let new_player_y = {y -. frame.world_box.box.height -. frame.world_box.box.y}
-      let moved_player = PlayerState(..player,
-        x:new_player_x,
-        y:new_player_y,
-      )
-      let player_box = collider_to_player_space(moved_player,frame.world_box.box)
+  let box_body = basics.RiggdBody(vector2.Vector2(0.0,0.0),vector2.Vector2(0.0,0.0))
+  case collisons.moving_box_collision(frame.world_box.box,player.body,box,box_body) {
+    Error(err) -> player
+    Ok(point) -> {
+        frame.world_box.box
+        |> echo
+        |> collisons.collider_to_body_space(player.body)
+        |> echo
+        |> collisons.collider_next_pos(player.body)
+        |> echo
+        let col = box |> echo
+        // raylib.draw_rectangle(col.x -. {col.width /. 2.0 },col.y -. {col.height /. 2.0 },col.width,col.height,raylib.ray_blue)
+        on_col(vector2.to_tuple(point),player)
 
-      let has_collided = collisons.collison_rect(player_box,box)
-      //todo move the colider to the point
-      case has_collided {
-        False -> moved_player
-        True -> {
-          on_col(#(x,y),moved_player)
-        }
       }
-    }
   }
 }
-
-
-
 
 
 fn get_hurt_collisons(self,other) {
@@ -324,25 +282,18 @@ fn get_hurt_collisons(self,other) {
       use colided_list,hit_box <- list.fold(hit_box,[])
 
       let assert Hitbox(_,_,_,_,_) as hit_box = hit_box
-      let hit_box_rect = collider_to_player_space(other,hit_box.box)
 
       use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
       //todo check perf
-      let assert HurtBox(_) as hurt_box = hurt_box
-      let hurt_box_rect = collider_to_player_space(self,hurt_box.box)
-      //todo if this is slow we can check distence in js land
-      let start = birl.now()
-      let has_collided = False
-      io.debug(birl.difference(start,birl.now()))
-      case has_collided {
-        // True -> list.append(colided_list,[
-        //   case self.blocking {
-        //     True -> HurtCollion(hurt_box,hit_box.block_stun_vel,hit_box.block_stun_state)
-        //     False ->  HurtCollion(hurt_box,hit_box.hit_stun_vel,hit_box.hit_stun_state)
-        //   }
-        // ])
-        False -> colided_list
-      }
+      // case collisons.moving_box_collision(hit_box,other) {
+      //   True -> list.append(colided_list,[
+      //     case self.blocking {
+      //       True -> HurtCollion(hurt_box,hit_box.block_stun_vel,hit_box.block_stun_state)
+      //       False ->  HurtCollion(hurt_box,hit_box.hit_stun_vel,hit_box.hit_stun_state)
+      //     }
+      //   ])
+      //   False -> colided_list
+      // }
     }
     _ -> []
   }

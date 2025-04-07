@@ -14,8 +14,8 @@ pub fn main() {
 
 // gleeunit test functions end in `_test`
 pub fn gjk_col_simple_test() {
-  let a = raylib.Rectangle(10.0,10.0,10.0,10.0)
-  let b = raylib.Rectangle(10.0,10.0,10.0,10.0)
+  let a = raylib.Rectangle(10.0,10.0,10.0,-10.0)
+  let b = raylib.Rectangle(10.0,10.0,10.0,-11.0)
   let check = collisons.rect_rect_gjk(a,b)
   check |> should.be_ok
 }
@@ -50,6 +50,23 @@ pub fn gjk_no_col_big_test() {
 pub fn gjk_no_col_far2_test() {
   let a = raylib.Rectangle(10.0,10.0,100.0,1.0)
   let b = raylib.Rectangle(10.0,10.0,100.0,30.0)
+  let check = collisons.rect_rect_gjk(a,b)
+  check |> should.be_error
+}
+pub fn gjk_no_col_far3_test() {
+  let a = raylib.Rectangle(150.0,30.0,0.0,-530.0)
+  let b = raylib.Rectangle(1000.0,50.0,0.0,-100.0)
+  let check = collisons.rect_rect_gjk(a,b)
+  check |> should.be_error
+}
+pub fn gjk_no_col_horizontal_test() {
+  let a = raylib.Rectangle(150.0,30.0,300.0,150.0)
+  let b = raylib.Rectangle(
+    x:600.0,
+    y:200.0,
+    width:50.0,
+    height:1000.0
+  )
   let check = collisons.rect_rect_gjk(a,b)
   check |> should.be_error
 }

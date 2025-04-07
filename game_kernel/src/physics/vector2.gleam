@@ -5,6 +5,10 @@ pub type Vector2 {
   )
 }
 
+pub fn zero() {
+  Vector2(0.0,0.0)
+}
+
 pub fn from_tuple(tup:#(Float,Float)) {
   Vector2(tup.0,tup.1)
 }

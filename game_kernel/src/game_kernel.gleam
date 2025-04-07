@@ -1,4 +1,6 @@
 // import gleamy/bench
+import physics/vector2
+import physics/basics
 import physics/collisons
 import gleam/io
 import gleam/list
@@ -51,32 +53,32 @@ pub fn new_game_kernel(sprite_scale) {
   //todo we need config files
   //todo this sprite scale stuff is stinky but its easy will make cleaner soon
   let player_col = player.make_player_world_box(xy:#(0.0 *. sprite_scale,20.0 *.sprite_scale),wh:#(50.0 *. sprite_scale,10.0*. sprite_scale))
-  let p1 = player.new_player(side: 1.0,x:0.0*. sprite_scale,y:200.0*. sprite_scale,
+  let p1 = player.new_player(side: 1.0,x:0.0*. sprite_scale,y:-200.0*. sprite_scale,
     states:iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
+            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
           })
         )
       ])),
       State("forward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(5.0 *. player.p1_side,player.velocity.1))
+            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(5.0,0.0))))
           })
         )
       ])),
       State("backward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,velocity:#(-5.0 *. player.p1_side,player.velocity.1))
+            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(-5.0,0.0))))
           })
         )
       ])),
       State("forward-quarter-circle",iv.from_list(list.flatten([
         [Startup([],player_col,[],option.Some(fn(player) {
-          player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
+          player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
         }))],
         Startup([],player_col,[],option.None) |> list.repeat(12),
         [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
@@ -87,7 +89,7 @@ pub fn new_game_kernel(sprite_scale) {
       ]))),
       State("DP",iv.from_list(list.flatten([
         [Startup([],player_col,[],option.Some(fn(player) {
-          player.PlayerState(..player,velocity:#(0.0,player.velocity.1))
+          player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
         }))],
         Startup([],player_col,[],option.None) |> list.repeat(12),
         [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
@@ -112,47 +114,41 @@ pub fn new_game_kernel(sprite_scale) {
       State("neutral",iv.from_list([Startup([],player_col,[],option.None)]))
     ]))
   GameKernel(p1,new_controls(),p2,new_controls(),[
-    // player.WorldBox(
-    //   Rectangle(
-    //     x:-120.0,
-    //     y:-200.0,
-    //     width:50.0,
-    //     height:1000.0
-    //   ), fn(_point,player) {
-    //     //todo we may need to move this later but for now this hack works
-    //     // let new_y = y
-    //     io.debug("gamng")
-    //     player.PlayerState(..player,
-    //       // y:new_y,
-    //       velocity:#(0.0,player.velocity.1)
-    //     )
-    //   }
-    // ),
-    // player.WorldBox(
-    //   Rectangle(
-    //     x:900.0,
-    //     y:-200.0,
-    //     width:50.0,
-    //     height:1000.0
-    //   ), fn(_point,player) {
-    //     player.PlayerState(..player,
-    //       // y:new_y,
-    //       velocity:#(0.0,player.velocity.1)
-    //     )
-    //   }
-    // ),
+    player.WorldBox(
+      Rectangle(
+        x:-500.0,
+        y:-200.0,
+        width:50.0,
+        height:1000.0
+      ), fn(_point,player) {
+        player.PlayerState(..player,
+          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y))
+
+        )
+      }
+    ),
+    player.WorldBox(
+      Rectangle(
+        x:600.0,
+        y:-200.0,
+        width:50.0,
+        height:1000.0
+      ), fn(_point,player) {
+        "shit" |> echo
+        player.PlayerState(..player,
+          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y))
+        )
+      }
+    ),
     player.WorldBox(
       Rectangle(
         x:0.0,
-        y:700.0,
+        y:-100.0,
         width:1000.0,
         height:50.0
       ), fn(_point,player) {
-        //todo we may need to move this later but for now this hack works
-        // let new_y = y
         player.PlayerState(..player,
-          // y:new_y,
-          velocity:#(player.velocity.0,0.0)
+          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(player.body.vel.x,0.0))
         )
       }
     ),
@@ -163,25 +159,26 @@ pub fn new_game_kernel(sprite_scale) {
 
 pub fn run_frame(game:GameKernel) {
   //todo we may need to run each step for each player one by one
+  // let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
   let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
-  let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
+  // let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
 
-  let p1 = p1 |> player.new_world_col(game.world_colliders)
-  let p2 = p2 |> player.run_world_collisons(game.world_colliders)
+  let p1 = p1 |> player.run_world_collisons(game.world_colliders)
+  // let p2 = p2 |> player.run_world_collisons(game.world_colliders)
 
   // let p1 = player.run_hurt_collions(p1,p2)
   // let p1 = player.run_hurt_collions(p2,p1)
 
   let p1 = p1 |> player.move_player_by_vel
-  let p2 = p2 |> player.move_player_by_vel
+  // let p2 = p2 |> player.move_player_by_vel
 
-  let p1 = p1 |> player.check_side(p2)
-  let p2 = p2 |> player.check_side(p1)
+  // let p1 = p1 |> player.check_side(p2)
+  // let p2 = p2 |> player.check_side(p1)
 
   GameKernel(
     ..game,
     p1:  p1,
-    p2:  p2
+    // p2:  p2
     // p2:  game.p2 |> player.run_frame,
   )
 }
