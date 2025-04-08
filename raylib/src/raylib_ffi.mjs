@@ -60,6 +60,14 @@ export function draw_texture(texture,posX,posY) {
   r.DrawTexture(texture,posX,posY,r.RAYWHITE)
 }
 
+export function draw_texture_rect(texture,source,pos_x,pos_y,color) {
+  r.DrawTextureRec(texture, source, {x:pos_x,y:pos_y}, tint)
+}
+
+export function draw_texture_pro(texture,source,dest,pos_x,pos_y,rotation,tint) {
+  r.DrawTexturePro(texture, source, dest, {x:pos_x,y:pos_y}, rotation, tint)
+}
+
 export function draw_texture_ex(texture, x,y, rotation, scale, tint) {
   r.DrawTextureEx(texture, {x:x,y:y}, rotation, scale, tint)
 }

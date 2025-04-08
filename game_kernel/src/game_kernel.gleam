@@ -65,14 +65,17 @@ pub fn new_game_kernel(sprite_scale) {
       State("forward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(5.0,0.0))))
+            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(5.0 *. player.p1_side,0.0))))
           })
         )
       ])),
       State("backward",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
           Some(fn(player) {
-            player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(-5.0,0.0))))
+            player.PlayerState(..player,
+              body: basics.RiggdBody(..player.body,
+                vel:vector2.add(player.body.vel,vector2.Vector2(-5.0 *. player.p1_side,0.0))
+              ))
           })
         )
       ])),
@@ -168,11 +171,12 @@ pub fn run_frame(game:GameKernel) {
   // let p1 = player.run_hurt_collions(p1,p2)
   // let p1 = player.run_hurt_collions(p2,p1)
 
+  let p1 = p1 |> player.check_side(p2)
+  let p2 = p2 |> player.check_side(p1)
+
   let p1 = p1 |> player.move_player_by_vel
   let p2 = p2 |> player.move_player_by_vel
 
-  let p1 = p1 |> player.check_side(p2)
-  let p2 = p2 |> player.check_side(p1)
 
   GameKernel(
     ..game,

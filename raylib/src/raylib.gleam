@@ -46,6 +46,7 @@ pub fn end_drawing() -> Nil
 
 @external(javascript, "./raylib_ffi.mjs", "draw_rectangle")
 pub fn draw_rectangle(x:Float,y:Float,width:Float,height:Float,color:Color) -> Nil
+
 @external(javascript, "./raylib_ffi.mjs", "draw_rectangle_rect")
 pub fn draw_rectangle_rect(rect:Rectangle) -> Nil
 
@@ -82,6 +83,12 @@ pub fn load_texture(path:String) -> Texture
 
 @external(javascript, "./raylib_ffi.mjs", "draw_texture")
 pub fn draw_texture(texture:Texture,pos_x:Float,pos_y:Float) -> Nil
+
+@external(javascript, "./raylib_ffi.mjs", "draw_texture_rect")
+pub fn draw_texture_rect(texture:Texture,source:Rectangle,pos_x:Float,pos_y:Float,color:Color) -> Nil
+
+@external(javascript, "./raylib_ffi.mjs", "draw_texture_pro")
+pub fn draw_texture_pro(texture texture:Texture,source source:Rectangle,dest dest:Rectangle,x pos_x:Float,y pos_y:Float,rot rot:float,tint tint:Color) -> Nil
 
 @external(javascript, "./raylib_ffi.mjs", "draw_texture_ex")
 pub fn draw_texture_ex(texture:Texture,pos_x:Float,pos_y:Float,rot:Float,scale:Float,color:Color) -> Nil

@@ -1,3 +1,4 @@
+import gleam/int
 import birl/duration
 import iv
 import player
@@ -41,8 +42,9 @@ fn default_attack_map_p1() {
 pub type GameState{
   GameState(
     kernel:kernel.GameKernel,
-    texture_map:dict.Dict(Int,iv.Array(raylib.Texture)),
-    paused:Bool
+    p1_sheet:raylib.Texture,
+    p2_sheet:raylib.Texture,
+    paused:Bool,
   )
 }
 const sprite_scale = 3.0
@@ -51,15 +53,14 @@ pub fn main() {
   io.println("Hello from game")
   raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
-  let test_texture = raylib.load_texture("./assets/Sprite-0001.png") |> io.debug
+  let p1_texture = raylib.load_texture("./assets/Sprite-0001.png")
   let game_kernel = kernel.new_game_kernel(sprite_scale)
   |> kernel.update_p1_input_map(default_input_map_p1())
   |> kernel.update_p1_attack_map(default_attack_map_p1())
 
-  let texture_map = dict.new()
-  |> dict.insert(0,iv.from_list([test_texture]))
-  update(GameState(game_kernel,texture_map,False))
-  raylib.unload_texture(test_texture)
+
+  update(GameState(game_kernel,p1_texture,p1_texture,False))
+  raylib.unload_texture(p1_texture)
   raylib.close_window()
 }
 
@@ -93,30 +94,30 @@ fn update(game_engine:GameState) {
           let game = game_update(game_engine)
           birl.difference(birl.now(),start)
           |> duration.accurate_decompose
-          |> echo
+          // |> echo
           game
         }
         True -> case raylib.is_key_down(key_n) {
           True -> game_update(game_engine)
           False -> game_engine.kernel
         }
-
       }
-        //draw phase
-        let _ = draw_player(game_kernel.p1,game_engine.texture_map)
-        draw_world(game_kernel)
-        raylib.draw_line(0.0,1000.0,0.0,-1000.0)
-        game_kernel.p1
-        |> draw_collider()
-        |> draw_vel()
-        let _ = draw_player(game_kernel.p2,game_engine.texture_map)
 
-        game_kernel.p2
-        |> draw_collider()
-        |> draw_vel()
+      //draw phase
+      let _ = draw_player(game_kernel.p1,game_engine.p1_sheet)
+      draw_world(game_kernel)
+      raylib.draw_line(0.0,1000.0,0.0,-1000.0)
+      game_kernel.p1
+      |> draw_collider()
+      |> draw_vel()
+      let _ = draw_player(game_kernel.p2,game_engine.p2_sheet)
 
-        raylib.end_mode_2d(cam)
-        raylib.end_drawing()
+      game_kernel.p2
+      |> draw_collider()
+      |> draw_vel()
+
+      raylib.end_mode_2d(cam)
+      raylib.end_drawing()
       update(GameState(..game_engine,kernel:game_kernel))
     }
     True -> {
@@ -128,15 +129,25 @@ fn update(game_engine:GameState) {
 
 
 
-fn draw_player(player:player.PlayerState,texture_map:dict.Dict(Int,iv.Array(raylib.Texture))) {
-  use frame_textures <- result.try(dict.get(texture_map,player.current_state))
-  use texture <- result.try(iv.get(frame_textures,player.current_frame))
-  Ok(raylib.draw_texture_ex(texture,
-    {player.body.pos.x -. { {texture.width *. sprite_scale}  /. 2.0} },
-    {player.body.pos.y -. {{texture.height  *. sprite_scale} /. 2.0} },
-    0.0,
-    sprite_scale,
-    raylib.ray_white
+fn draw_player(player:player.PlayerState,texture:raylib.Texture) {
+  Ok(raylib.draw_texture_pro(
+    texture:texture,
+    source:raylib.Rectangle(
+      64.0 *. player.p1_side,
+      64.0,
+      0.0 +. {64.0 *. int.to_float(player.current_frame)},
+      0.0 +. {64.0 *. int.to_float(player.current_state)}
+    ),
+    dest:raylib.Rectangle(
+      64.0 *. sprite_scale,
+      64.0 *. sprite_scale,
+      {player.body.pos.x -. { {64.0 *. sprite_scale}  /. 2.0} },
+      {player.body.pos.y -. {{64.0  *. sprite_scale} /. 2.0} }
+    ),
+    x: 0.0,
+    y: 0.0,
+    rot:0.0,
+    tint:raylib.ray_white
   ))
 }
 

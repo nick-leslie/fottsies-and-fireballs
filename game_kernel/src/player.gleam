@@ -171,20 +171,12 @@ fn run_frame(player:PlayerState) {
 }
 //todo fix me
 pub fn check_side(self:PlayerState,other:PlayerState) {
-  //todo this is bad and I hate it
-  let self_body = self.body
-  let other_body = other.body
-  case vector2.dot(self_body.pos,other_body.pos) >=. 0.0 {
-    False -> case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
-      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(1.0,0.0))),p1_side:-1.0)
-      order.Gt -> PlayerState(..self,p1_side:-1.0)
-      order.Lt -> PlayerState(..self,p1_side:1.0)
-    }
-    True ->  case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
-      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(1.0,0.0))),p1_side:-1.0)
-      order.Gt -> PlayerState(..self,p1_side:1.0)
-      order.Lt -> PlayerState(..self,p1_side:1.0)
-    }
+  let self_body = self.body |> basics.move_by(self.body.vel)
+  let other_body = other.body |> basics.move_by(self.body.vel)
+  case float.compare(self_body.pos.x-.other_body.pos.x,0.0) {
+    order.Eq -> PlayerState(..self,body:self_body,p1_side:1.0)
+    order.Gt -> PlayerState(..self,p1_side:-1.0)
+    order.Lt -> PlayerState(..self,p1_side:1.0)
   }
 }
 
@@ -257,13 +249,7 @@ pub fn run_world_collisons(self:PlayerState,world_boxes:List(Collider)) {
   case collisons.moving_box_collision(frame.world_box.box,player.body,box,box_body) {
     Error(err) -> player
     Ok(point) -> {
-        frame.world_box.box
-        |> echo
-        |> collisons.collider_to_body_space(player.body)
-        |> echo
-        |> collisons.collider_next_pos(player.body)
-        |> echo
-        let col = box |> echo
+        // let col = box |> echo
         // raylib.draw_rectangle(col.x -. {col.width /. 2.0 },col.y -. {col.height /. 2.0 },col.width,col.height,raylib.ray_blue)
         on_col(vector2.to_tuple(point),player)
 

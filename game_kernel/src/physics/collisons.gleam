@@ -66,7 +66,7 @@ fn gjk_loop(perams:GJKPerams) {
                 Ok(sim) -> {
                   // "test" |> echo
                   // perams |> echo
-                  sim |> echo
+                  // sim |> echo
                   Ok(sim)
                 } // todo return point
                 Error(#(sim,dir)) -> gjk_loop(GJKPerams(..perams,
