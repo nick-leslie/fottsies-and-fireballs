@@ -104,7 +104,7 @@ fn update(game_engine:GameState) {
       }
         //draw phase
         let _ = draw_player(game_kernel.p1,game_engine.texture_map)
-        // draw_world(game_kernel)
+        draw_world(game_kernel)
         raylib.draw_line(0.0,1000.0,0.0,-1000.0)
         game_kernel.p1
         |> draw_collider()

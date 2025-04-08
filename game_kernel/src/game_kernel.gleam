@@ -53,7 +53,7 @@ pub fn new_game_kernel(sprite_scale) {
   //todo we need config files
   //todo this sprite scale stuff is stinky but its easy will make cleaner soon
   let player_col = player.make_player_world_box(xy:#(0.0 *. sprite_scale,20.0 *.sprite_scale),wh:#(50.0 *. sprite_scale,10.0*. sprite_scale))
-  let p1 = player.new_player(side: 1.0,x:0.0*. sprite_scale,y:-200.0*. sprite_scale,
+  let p1 = player.new_player(side: 1.0,x:10.0*. sprite_scale,y:-200.0*. sprite_scale,
     states:iv.from_list([
       State("neutral",iv.from_list([
         Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
@@ -129,12 +129,11 @@ pub fn new_game_kernel(sprite_scale) {
     ),
     player.WorldBox(
       Rectangle(
-        x:600.0,
+        x:520.0,
         y:-200.0,
         width:50.0,
         height:1000.0
       ), fn(_point,player) {
-        "shit" |> echo
         player.PlayerState(..player,
           body:basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y))
         )

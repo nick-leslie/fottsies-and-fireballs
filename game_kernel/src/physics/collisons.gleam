@@ -49,11 +49,11 @@ fn gjk_loop(perams:GJKPerams) {
       case vector2.dot(new_point,perams.dir) <=. 0.0 {
         True -> Error("No collision (new point not past the origin)")
         False -> {
-          let simplex = list.append(perams.simplex,[new_point])
+          let simplex = list.append([new_point],perams.simplex)
           //todo we want to simplify this by making the return logic less nested
           case simplex {
             [zero, one] -> {
-              let #(sim,dir) = line_case(one,zero)
+              let #(sim,dir) = line_case(zero,one)
                 gjk_loop(GJKPerams(..perams,
                   itter:perams.itter+1,
                   simplex: sim,
@@ -61,7 +61,7 @@ fn gjk_loop(perams:GJKPerams) {
                 ))
             }
             [zero, one,two] -> {
-              let triangle = triangle_case(two,one,zero)
+              let triangle = triangle_case(zero,one,two)
               case triangle {
                 Ok(sim) -> {
                   // "test" |> echo
@@ -90,13 +90,12 @@ pub fn line_case(a:Vector2,b:Vector2) {
   let ao = Vector2( x: a.x *. -1.0, y: a.y *. -1.0 )
   let direction = case vector2.dot(Vector2(ab.y *. -1.0,ab.x),ao) >. 0.0 {
     False -> Vector2(ab.y *. -1.0,ab.x)
-    True -> Vector2(ab.y,ab.x *. -1.0)
+    True -> Vector2(ab.y *. -1.0,ab.x *. -1.0)
   }
-  #([b,a],direction)
-  // case vector2.dot(direction, ao) >. 0.0 { // same dir
-  //   True -> #([a,b],vector2.cross(vector2.cross(ab,ao),ab)) // change direction
-  //   False -> #([a],ao)
-  // }
+  case vector2.dot(ab, ao) >. 0.0 { // same dir
+    True -> #([a,b],direction) // change direction
+    False -> #([a],ao)
+  }
 }
 pub fn triangle_case(a:Vector2,b:Vector2,c:Vector2) {
   let ab = Vector2(x: b.x -. a.x, y: b.y -. a.y )
@@ -108,17 +107,19 @@ pub fn triangle_case(a:Vector2,b:Vector2,c:Vector2) {
   // let ab_perp = Vector2(x: ab.y *. -1.0, y: ab.x ) // Perpendicular to AB, pointing outwards
   let direction = case vector2.dot(Vector2(ab.y *. -1.0,ab.x),c) >. 0.0 {
     False -> Vector2(ab.y *. -1.0,ab.x)
-    True -> Vector2(ab.y,ab.x *. -1.0)
+    True -> Vector2(ab.y *. -1.0,ab.x *. -1.0)
   }
-  case vector2.dot(vector2.cross(direction,ac),ao) >. 0.0 {
+  case vector2.dot(direction,ao) >. 0.0 {
     True -> {
       Error(#([b,a],direction))
     }
     False -> {
+
       let direction = case vector2.dot(Vector2(ac.y *. -1.0,ac.x),b) >. 0.0 {
         False -> Vector2(ac.y *. -1.0,ac.x)
         True -> Vector2(ac.y,ac.x *. -1.0)
       }
+      // let direction = Vector2(ac.y *. -1.0,ac.x)
       case vector2.dot(direction,ao) >. 0.0 {
         True -> Error(#([c,a],direction))
         False -> Ok([a,b,c])

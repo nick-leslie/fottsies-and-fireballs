@@ -70,3 +70,14 @@ pub fn gjk_no_col_horizontal_test() {
   let check = collisons.rect_rect_gjk(a,b)
   check |> should.be_error
 }
+pub fn gjk_no_col_horizontal2_test() {
+  let a = raylib.Rectangle(150.0,30.0,300.0,150.0)
+  let b = raylib.Rectangle(
+    x:-700.0,
+    y:200.0,
+    width:50.0,
+    height:1000.0
+  )
+  let check = collisons.rect_rect_gjk(a,b)
+  check |> should.be_error
+}
