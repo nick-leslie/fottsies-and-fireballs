@@ -174,16 +174,16 @@ pub fn check_side(self:PlayerState,other:PlayerState) {
   //todo this is bad and I hate it
   let self_body = self.body
   let other_body = other.body
-  case self_body.pos.x >=. 0.0 {
+  case vector2.dot(self_body.pos,other_body.pos) >=. 0.0 {
     False -> case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
-      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(0.0,1.0))),p1_side:-1.0)
-      order.Gt -> PlayerState(..self,p1_side:1.0)
-      order.Lt -> PlayerState(..self,p1_side:-1.0)
+      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(1.0,0.0))),p1_side:-1.0)
+      order.Gt -> PlayerState(..self,p1_side:-1.0)
+      order.Lt -> PlayerState(..self,p1_side:1.0)
     }
     True ->  case float.compare(self_body.pos.x -. other_body.pos.x,0.0) {
-      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(0.0,1.0))),p1_side:1.0)
-      order.Gt -> PlayerState(..self,p1_side:-1.0)
-      order.Lt -> PlayerState(..self,p1_side:-1.0)
+      order.Eq -> PlayerState(..self,body:basics.RiggdBody(..self_body,pos:vector2.add(self.body.pos,vector2.Vector2(1.0,0.0))),p1_side:-1.0)
+      order.Gt -> PlayerState(..self,p1_side:1.0)
+      order.Lt -> PlayerState(..self,p1_side:1.0)
     }
   }
 }

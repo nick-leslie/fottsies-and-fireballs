@@ -160,24 +160,24 @@ pub fn run_frame(game:GameKernel) {
   //todo we may need to run each step for each player one by one
   // let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
   let p1 = player.add_grav(game.p1) |> player.update_state(game.p1_controls.buffer)
-  // let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
+  let p2 = player.add_grav(game.p2) |> player.update_state(game.p2_controls.buffer)
 
   let p1 = p1 |> player.run_world_collisons(game.world_colliders)
-  // let p2 = p2 |> player.run_world_collisons(game.world_colliders)
+  let p2 = p2 |> player.run_world_collisons(game.world_colliders)
 
   // let p1 = player.run_hurt_collions(p1,p2)
   // let p1 = player.run_hurt_collions(p2,p1)
 
   let p1 = p1 |> player.move_player_by_vel
-  // let p2 = p2 |> player.move_player_by_vel
+  let p2 = p2 |> player.move_player_by_vel
 
-  // let p1 = p1 |> player.check_side(p2)
-  // let p2 = p2 |> player.check_side(p1)
+  let p1 = p1 |> player.check_side(p2)
+  let p2 = p2 |> player.check_side(p1)
 
   GameKernel(
     ..game,
     p1:  p1,
-    // p2:  p2
+    p2:  p2
     // p2:  game.p2 |> player.run_frame,
   )
 }

@@ -93,7 +93,7 @@ fn update(game_engine:GameState) {
           let game = game_update(game_engine)
           birl.difference(birl.now(),start)
           |> duration.accurate_decompose
-          // |> echo
+          |> echo
           game
         }
         True -> case raylib.is_key_down(key_n) {
