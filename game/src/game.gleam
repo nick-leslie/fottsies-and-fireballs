@@ -38,15 +38,20 @@ fn default_attack_map_p1() {
   |> dict.insert(key_k,input.Medium)
   |> dict.insert(key_l,input.Heavy)
 }
+pub type Charecters{
+  FreddyFireball()
+}
 
 pub type GameState{
   GameState(
-    kernel:kernel.GameKernel,
+    kernel:kernel.GameKernel(Charecters),
     p1_sheet:raylib.Texture,
     p2_sheet:raylib.Texture,
     paused:Bool,
   )
 }
+
+
 const sprite_scale = 3.0
 const cam_zoom = 0.50
 pub fn main() {
@@ -54,7 +59,7 @@ pub fn main() {
   raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
   let p1_texture = raylib.load_texture("./assets/Sprite-0001.png")
-  let game_kernel = kernel.new_game_kernel(sprite_scale)
+  let game_kernel = kernel.new_game_kernel(sprite_scale,FreddyFireball,FreddyFireball)
   |> kernel.update_p1_input_map(default_input_map_p1())
   |> kernel.update_p1_attack_map(default_attack_map_p1())
 
@@ -129,7 +134,7 @@ fn update(game_engine:GameState) {
 
 
 
-fn draw_player(player:player.PlayerState,texture:raylib.Texture) {
+fn draw_player(player:player.PlayerState(cs),texture:raylib.Texture) {
   Ok(raylib.draw_texture_pro(
     texture:texture,
     source:raylib.Rectangle(
@@ -151,7 +156,7 @@ fn draw_player(player:player.PlayerState,texture:raylib.Texture) {
   ))
 }
 
-fn draw_vel(player:player.PlayerState) {
+fn draw_vel(player:player.PlayerState(cs)) {
   let frame = player.get_current_frame(player)
   let player_box_rect= player.collider_to_player_space(player,frame.world_box.box)
 
@@ -161,7 +166,7 @@ fn draw_vel(player:player.PlayerState) {
   player
 }
 
-fn draw_collider(player:player.PlayerState) {
+fn draw_collider(player:player.PlayerState(cs)) {
   let frame = player.get_current_frame(player)
   let col = player.collider_to_player_space(player,frame.world_box.box)
   //this is because math is centered but render is right allighend
@@ -171,7 +176,7 @@ fn draw_collider(player:player.PlayerState) {
 }
 
 
-fn draw_world(kernel:kernel.GameKernel) {
+fn draw_world(kernel:kernel.GameKernel(cs)) {
   use col <- list.each(kernel.world_colliders)
   raylib.draw_rectangle(col.box.x-.{col.box.width /. 2.0},col.box.y-.{col.box.height /. 2.0},col.box.width,col.box.height,raylib.ray_blue)
 }
