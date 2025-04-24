@@ -16,6 +16,7 @@ pub fn to_tuple(vec:Vector2) {
   #(vec.x,vec.y)
 }
 
+
 pub fn inverse(a:Vector2,) {
   Vector2(
     x: a.x *. -1.0,
@@ -28,6 +29,21 @@ pub fn add(a:Vector2,b:Vector2) {
     y: a.y +. b.y
   )
 }
+
+pub fn scale(a:Vector2,scale:Float) {
+  Vector2(
+    x: a.x *. scale,
+    y: a.y *. scale
+  )
+}
+
+pub fn scale_div(a:Vector2,scale:Float) {
+  Vector2(
+    x: a.x /. scale,
+    y: a.y /. scale
+  )
+}
+
 
 pub fn dot(a:Vector2, b:Vector2) {
  a.x *. b.x +. a.y *. b.y

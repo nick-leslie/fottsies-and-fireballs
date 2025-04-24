@@ -99,8 +99,8 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
         height:1000.0
       ), fn(_point,player) {
         player.PlayerState(..player,
-          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y))
-
+          body:basics.sub_force(player.body,vector2.Vector2(player.body.force.x,0.0))
+          |> basics.set_vel(vector2.Vector2(0.0,player.body.vel.y))
         )
       }
     ),
@@ -112,7 +112,9 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
         height:1000.0
       ), fn(_point,player) {
         player.PlayerState(..player,
-          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y))
+          body:basics.sub_force(player.body,vector2.Vector2(player.body.force.x,0.0))
+          |> basics.set_vel(vector2.Vector2(0.0,player.body.vel.y))
+
         )
       }
     ),
@@ -125,7 +127,9 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
       ), fn(_point,player) {
         player.PlayerState(..player,
           grounded:True,
-          body:basics.RiggdBody(..player.body,vel:vector2.Vector2(player.body.vel.x,0.0))
+          body:
+          basics.sub_force(player.body,vector2.Vector2(0.0,9.8))
+          |> basics.set_vel(vector2.Vector2(player.body.vel.x,0.0))
         )
       }
     ),
@@ -149,8 +153,8 @@ pub fn run_frame(game:GameKernel(cs)) {
   let p1 = p1 |> player.check_side(p2)
   let p2 = p2 |> player.check_side(p1)
 
-  let p1 = p1 |> player.move_player_by_vel
-  let p2 = p2 |> player.move_player_by_vel
+  let p1 = p1 |> player.step
+  let p2 = p2 |> player.step
 
 
   GameKernel(

@@ -45,7 +45,7 @@ pub type PlayerState(charecter_state) {
 pub fn new_player(side p1_side:Float,x x,y y,scale scale,states states:List(State(charecter_state)),charecter_state charecter_state:charecter_state) -> PlayerState(charecter_state) {
   PlayerState(
     p1_side:p1_side,
-    body:basics.RiggdBody(vector2.Vector2(x,y),vector2.zero()),
+    body:basics.new(vector2.Vector2(x,y),10.0),
     states:iv.append_list(inital_states(scale),states),
     patterns:list.new(),
     current_state:0,
@@ -67,7 +67,7 @@ fn inital_states(scale) {
   let player_col = make_player_world_box(xy:#(0.0 *. scale,20.0 *.scale),wh:#(50.0 *. scale,10.0*. scale))
   iv.from_list(
   [
-  State("neutral",iv.from_list([
+    State("neutral",iv.from_list([
     Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
       Some(fn(player) {
         PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
@@ -214,16 +214,20 @@ pub fn update_state(player:PlayerState(cs),buffer:input.Buffer) {
 
 pub fn add_grav(player:PlayerState(cs)) {
   //todo we may want to disable grav
-  case player.body.vel.y <. grav_max {
-    True -> PlayerState(..player,body:
-      basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(0.0,grav_max)
-      )))
-    False -> {
-      PlayerState(..player,body:
-        basics.RiggdBody(..player.body,vel:vector2.Vector2(player.body.vel.x,10.0)
-        ))
-    }
-  }
+  // case player.body.vel.y <. grav_max {
+  //   True -> PlayerState(..player,body:
+  //     basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(0.0,grav_max)
+  //     )))
+  //   False -> {
+  //     PlayerState(..player,body:
+  //       basics.RiggdBody(..player.body,vel:vector2.Vector2(player.body.vel.x,10.0)
+  //       ))
+  //   }
+  // }
+  PlayerState(
+    ..player,
+    body:basics.add_force(player.body,vector2.Vector2(0.0,9.8))
+  )
 }
 
 //todo this is breaking
@@ -262,9 +266,12 @@ pub fn check_side(self:PlayerState(cs),other:PlayerState(cs)) {
 //
 
 
-pub fn move_player_by_vel(player:PlayerState(cs)) {
+pub fn step(player:PlayerState(cs)) {
 
-  PlayerState(..player,body:basics.RiggdBody(..player.body,pos:vector2.add(player.body.pos,player.body.vel)))
+  PlayerState(..player,
+    body:basics.step(player.body)
+    |> basics.move_by_vel
+  )
 }
 
 //--- collisions
@@ -324,7 +331,7 @@ pub fn run_world_collisons(self:PlayerState(cs),world_boxes:List(Collider(cs))) 
   use player,col <- list.fold(world_boxes,self)
   let assert WorldBox(box,on_col) = col
 
-  let box_body = basics.RiggdBody(vector2.Vector2(0.0,0.0),vector2.Vector2(0.0,0.0))
+  let box_body = basics.new(vector2.Vector2(0.0,0.0),10.)
   case collisons.moving_box_collision(frame.world_box.box,player.body,box,box_body) {
     Error(err) -> {
       //todo only update on the floor colider
