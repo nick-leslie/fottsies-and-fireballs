@@ -41,13 +41,20 @@ fn gjk(a_support:Support,b_support:Support) {
     simplex: )
   gjk_loop(perams)
 }
+
+pub type GjkERROR {
+  NoPointPastOrigen
+  MaxDepthReached
+  NoCol
+}
+
 //moddled after https://github.com/bryanchacosky/gjk.java/blob/master/GJK.java
 fn gjk_loop(perams:GJKPerams) {
   case perams.itter > perams.max_itter {
     False -> {
       let new_point = support(perams.dir,perams.a_support,perams.b_support)
       case vector2.dot(new_point,perams.dir) <=. 0.0 {
-        True -> Error("No collision (new point not past the origin)")
+        True -> Error(NoPointPastOrigen)
         False -> {
           let simplex = list.append([new_point],perams.simplex)
           //todo we want to simplify this by making the return logic less nested
@@ -76,12 +83,12 @@ fn gjk_loop(perams:GJKPerams) {
                 ))
               }
             }
-            _ -> Error("no collion")
+            _ -> Error(NoCol)
           }
           }
       }
     }
-    True -> Error("max itter depth reached may not be acurate")
+    True -> Error(MaxDepthReached)
   }
 }
 
@@ -165,7 +172,7 @@ pub fn moving_box_collision(
   a_box:Rectangle,
   a_body:RiggdBody,
   b_box:Rectangle,
-  b_body:RiggdBody,) -> Result(Vector2, String) {
+  b_body:RiggdBody,) -> Result(Vector2, GjkERROR) {
   let a_box =  collider_to_body_space(a_box,a_body)
   let b_box =  collider_to_body_space(b_box,b_body)
   let next_a = collider_next_pos(a_box,a_body)
