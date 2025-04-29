@@ -71,9 +71,6 @@ fn gjk_loop(perams:GJKPerams) {
               let triangle = triangle_case(zero,one,two)
               case triangle {
                 Ok(sim) -> {
-                  // "test" |> echo
-                  // perams |> echo
-                  // sim |> echo
                   Ok(sim)
                 } // todo return point
                 Error(#(sim,dir)) -> gjk_loop(GJKPerams(..perams,

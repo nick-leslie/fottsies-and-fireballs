@@ -107,7 +107,7 @@ pub fn pick_state(buffer:Buffer,patterns:List(Pattern)) {
         }
       }
     }
-  } 
+  }
   top_pattern.state
 }
 

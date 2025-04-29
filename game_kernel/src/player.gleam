@@ -1,14 +1,9 @@
 import gleam/order
-import birl
-import gleam/function
 import gleam/io
-import gleam/result
 import gleam/option
 import iv
 import input.{Input,Up,Down,DownForward,Forward,InputWithAttack,Light,Neutral,Back}
-import gleam/dict
 import gleam/list
-import birl/duration
 import gleam/float
 import raylib.{Rectangle, type Rectangle}
 import physics/collisons
@@ -42,11 +37,11 @@ pub type PlayerState(charecter_state) {
   )
 }
 
-pub fn new_player(side p1_side:Float,x x,y y,scale scale,states states:List(State(charecter_state)),charecter_state charecter_state:charecter_state) -> PlayerState(charecter_state) {
+pub fn new_player(side p1_side:Float,x x,y y,charecter_state charecter_state:charecter_state) -> PlayerState(charecter_state) {
   PlayerState(
     p1_side:p1_side,
     body:basics.new(vector2.Vector2(x,y),10.0),
-    states:iv.append_list(inital_states(scale),states),
+    states:iv.new(), //todo replace with editor stuff
     patterns:list.new(),
     current_state:0,
     current_frame:0,
@@ -55,77 +50,81 @@ pub fn new_player(side p1_side:Float,x x,y y,scale scale,states states:List(Stat
     charge:0,
     charecter_state:charecter_state
   )
-  |> add_new_pattern(input:[Input(Neutral)],state_index: 0, priority:0)
-  |> add_new_pattern(input:[Input(Forward)], state_index:1,priority:0)
-  |> add_new_pattern(input:[Input(Back)], state_index:2,priority:0)
-  |> add_new_pattern(input:[Input(Up)], state_index:3,priority:0)
-  |> add_new_pattern(input:[Input(input.UpForward)], state_index:4,priority:0)
-  |> add_new_pattern(input:[Input(input.UpBack)], state_index:5,priority:0)
 }
-
-fn inital_states(scale) {
+//todo pull this out and make it editor stuff
+pub fn inital_states(player:PlayerState(charecter_state),scale) {
   let player_col = make_player_world_box(xy:#(0.0 *. scale,20.0 *.scale),wh:#(50.0 *. scale,10.0*. scale))
-  iv.from_list(
-  [
+  let hurtbox = HurtBox(Rectangle(32.0 *. scale,32.0 *. scale,0.0,0.0))
+  let states = [
     State("neutral",iv.from_list([
-    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player) {
         PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
       })
     )
   ])),
   State("forward",iv.from_list([
-    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player) {
         PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(5.0 *. player.p1_side,0.0))))
       })
     )
   ])),
   State("backward",iv.from_list([
-    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player) {
-        PlayerState(..player,
-          body: basics.RiggdBody(..player.body,
-            vel:vector2.add(player.body.vel,vector2.Vector2(-5.0 *. player.p1_side,0.0))
-          ))
+        PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.add(player.body.vel,vector2.Vector2(-5.0 *. player.p1_side,0.0))))
       })
     )
   ])),
   State("up",iv.from_list(list.flatten([
-    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player:PlayerState(charecter_state)) {
         //todo add a grounded state to players
         PlayerState(..player,
-
-          body: basics.RiggdBody(..player.body,
-            vel:vector2.add(player.body.vel,vector2.Vector2(0.0,-12.0))
-          ))
-      })
-    ) |> list.repeat(20),
+          body: basics.add_force(player.body,vector2.Vector2(0.0,-17.0))
+      )}
+    )) |> list.repeat(20),
     Recovery([],player_col,[],option.None) |> list.repeat(40)
   ]))),
   State("upbackward",iv.from_list(list.flatten([
-    [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+    [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player) {
         PlayerState(..player,
-          body: basics.RiggdBody(..player.body,
-            vel:vector2.add(player.body.vel,vector2.Vector2(-10.0 *. player.p1_side,-30.0))
-          ))
+          body: basics.add_force(player.body,vector2.Vector2(-40.0*. player.p1_side,-230.0))
+        )
       })
     )],
     Recovery([],player_col,[],option.None) |> list.repeat(60)
   ]))),
-  State("upforward",iv.from_list([
-    Active(hit_boxes:[],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.
+  State("upforward",iv.from_list(list.flatten([
+    [Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
       Some(fn(player) {
         PlayerState(..player,
-          body: basics.RiggdBody(..player.body,
-            vel:vector2.add(player.body.vel,vector2.Vector2(10.0 *. player.p1_side,-30.0))
-          ))
+          body: basics.add_force(player.body,vector2.Vector2(40.0*. player.p1_side,-230.0))
+        )
       })
-    )
-  ])),
-  ])
+    )],
+    Recovery([],player_col,[],option.None) |> list.repeat(60)
+  ]))),
+  ] |> iv.append_list(player.states,_)
+  PlayerState(
+    ..player,
+    states: states
+  )
+  |> add_new_pattern(input:[Input(Neutral)],state_index: 0, priority:0)
+  |> add_new_pattern(input:[Input(Forward)], state_index:1,priority:0)
+  |> add_new_pattern(input:[Input(Back)], state_index:2,priority:0)
+  |> add_new_pattern(input:[Input(Up)], state_index:3,priority:0)
+  |> add_new_pattern(input:[Input(input.UpBack)], state_index:4,priority:0)
+  |> add_new_pattern(input:[Input(input.UpForward)], state_index:5,priority:0)
+}
+
+pub fn append_states(player,states:List(State(charecter_state))) {
+  PlayerState(
+    ..player,
+    states:iv.append_list(player.states,states)
+  )
 }
 
 
@@ -184,6 +183,7 @@ pub type Frame(charecter_state) {
     world_box:Collider(charecter_state),
     cancel_options:List(StateIndex),
     on_frame:option.Option(fn (PlayerState(charecter_state)) -> PlayerState(charecter_state)),
+    is_hitstun:Bool
   )
 }
 
@@ -277,13 +277,17 @@ pub fn step(player:PlayerState(cs)) {
 //--- collisions
 type OnCollionFn(cs) = fn (#(Float,Float),PlayerState(cs)) -> PlayerState(cs)
 
+pub fn no_mod_col(vec:#(Float,Float),ps:PlayerState(cs)) {
+  ps
+}
+
 pub type Collider(cs) {
   Hitbox(
     box:Rectangle,
-    hit_stun_state:State(cs),
-    hit_stun_vel:OnCollionFn(cs), // todo refactor
-    block_stun_state:State(cs),
-    block_stun_vel:OnCollionFn(cs)
+    hit_stun_frames:Int,
+    hit_stun_fn:OnCollionFn(cs), // todo refactor
+    block_stun_frames:Int,
+    block_stun_fn:OnCollionFn(cs)
   )
   HurtBox(
     box:Rectangle
@@ -312,13 +316,14 @@ pub fn make_player_world_box(wh wh:#(Float,Float),xy xy:#(Float,Float)) {
 
 pub type CollionInfo(cs) {
   HurtCollion(
-    hit:Collider(cs),
+    col:Collider(cs),
     moddify_vel:OnCollionFn(cs),
-    stun_state:State(cs)
+    stun_frames:Int,
+    state_index:Int
   )
   PlayerToWorld(
     player:PlayerState(cs),
-    moddify_vel:OnCollionFn(cs)
+    moddify_vel:OnCollionFn(cs),
   )
 }
 
@@ -347,28 +352,37 @@ pub fn run_world_collisons(self:PlayerState(cs),world_boxes:List(Collider(cs))) 
 }
 
 
-fn get_hurt_collisons(self,other) {
+pub fn get_hurt_collisons(self,other) {
   let self_frame = get_current_frame(self)
   let other_frame = get_current_frame(other)
   //check if the other player is active and check if there hit boxes overlap with our hurt boxes
   case other_frame {
-    Active(hit_box,_world_box,_cancle_options, _on_active, _hurt_box) -> {
+    Active(_hurt_boxs,_world_box,_cancle_options, _on_active, hit_boxs) -> {
       //if any resolve as  collision we return
-      use colided_list,hit_box <- list.fold(hit_box,[])
-
-      let assert Hitbox(_,_,_,_,_) as hit_box = hit_box
-
-      use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
-      //todo check perf
-      // case collisons.moving_box_collision(hit_box,other) {
-      //   True -> list.append(colided_list,[
-      //     case self.blocking {
-      //       True -> HurtCollion(hurt_box,hit_box.block_stun_vel,hit_box.block_stun_state)
-      //       False ->  HurtCollion(hurt_box,hit_box.hit_stun_vel,hit_box.hit_stun_state)
-      //     }
-      //   ])
-      //   False -> colided_list
-      // }
+      use colided_list,hit_box <- list.fold(hit_boxs,[])
+      case hit_box |> echo {
+        Hitbox(hit_rect, _, _, _, _)  as hit_box -> {
+          self_frame.hurt_boxes |> echo
+          use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
+          // todo check perf
+          case collisons.moving_box_collision(hit_rect,other.body,hurt_box.box,other.body) {
+            Ok(point) -> {
+              list.append(colided_list,[
+                case self.blocking {
+                  True -> HurtCollion(hurt_box,hit_box.block_stun_fn,hit_box.block_stun_frames,0) //todo update index to be correct based on state
+                  False ->  HurtCollion(hurt_box,hit_box.hit_stun_fn,hit_box.hit_stun_frames,0)
+                }
+              ])
+            }
+            Error(_any) -> {
+              colided_list
+            }
+          } |> echo
+        }
+        _ -> {
+          []
+        }
+      }
     }
     _ -> []
   }

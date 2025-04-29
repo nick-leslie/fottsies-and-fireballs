@@ -114,11 +114,15 @@ fn update(game_engine:GameState) {
       raylib.draw_line(0.0,1000.0,0.0,-1000.0)
       game_kernel.p1
       |> draw_collider()
+      |> draw_hitboxs()
+      |> draw_hurtboxs()
       |> draw_vel()
       let _ = draw_player(game_kernel.p2,game_engine.p2_sheet)
 
       game_kernel.p2
       |> draw_collider()
+      |> draw_hitboxs()
+      |> draw_hurtboxs()
       |> draw_vel()
 
       raylib.end_mode_2d(cam)
@@ -175,6 +179,33 @@ fn draw_collider(player:player.PlayerState(cs)) {
   player
 }
 
+pub fn draw_hitboxs(player:player.PlayerState(cs)) {
+  let frame = player.get_current_frame(player)
+  case frame {
+    player.Active(_, _, _, _, hit_boxes) -> {
+      {
+        use hit_box <- list.map(hit_boxes)
+        let col = player.collider_to_player_space(player,hit_box.box)
+        //this is because math is centered but render is right allighend
+        // raylib.draw_rectangle_rect(col |> echo)
+        raylib.draw_rectangle(col.x-.{col.width /. 2.0},col.y-.{col.height /. 2.0},col.width,col.height,raylib.red)
+      }
+      player
+    }
+    _ -> player
+  }
+}
+pub fn draw_hurtboxs(player:player.PlayerState(cs)) {
+  let frame = player.get_current_frame(player)
+  {
+    use hit_box <- list.map(frame.hurt_boxes)
+    let col = player.collider_to_player_space(player,hit_box.box)
+    //this is because math is centered but render is right allighend
+    // raylib.draw_rectangle_rect(col |> echo)
+    raylib.draw_rectangle(col.x-.{col.width /. 2.0},col.y-.{col.height /. 2.0},col.width,col.height,raylib.green)
+  }
+  player
+}
 
 fn draw_world(kernel:kernel.GameKernel(cs)) {
   use col <- list.each(kernel.world_colliders)

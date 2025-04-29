@@ -147,6 +147,5 @@ export function get_screen_to_world(pos,camera) {
 }
 
 
-
 // Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera);    // Get the screen space position for a 2d camera world space position
 // Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera);    // Get the world space position for a 2d camera screen space position

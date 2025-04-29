@@ -24,6 +24,33 @@ pub const ray_white = Color(
 
 pub const ray_blue = Color(r: 0, g: 121, b: 241, a: 255 )
 
+pub const light_gray = Color( r: 200, g: 200, b: 200, a: 255 )
+pub const red=Color( r: 230, g: 41, b: 55, a: 255 )
+pub const green= Color ( r: 0, g: 228, b: 48, a: 255 )
+// pub const gray: { r: 130, g: 130, b: 130, a: 255 }
+// pub const DARKGRAY: { r: 80, g: 80, b: 80, a: 255 }
+// pub const YELLOW: { r: 253, g: 249, b: 0, a: 255 }
+// pub const GOLD: { r: 255, g: 203, b: 0, a: 255 }
+// pub const ORANGE: { r: 255, g: 161, b: 0, a: 255 }
+// pub const PINK: { r: 255, g: 109, b: 194, a: 255 }
+// pub const MAROON: { r: 190, g: 33, b: 55, a: 255 }
+// pub const LIME: { r: 0, g: 158, b: 47, a: 255 }
+// pub const DARKGREEN: { r: 0, g: 117, b: 44, a: 255 }
+// pub const SKYBLUE: { r: 102, g: 191, b: 255, a: 255 }
+// pub const BLUE: { r: 0, g: 121, b: 241, a: 255 }
+// pub const DARKBLUE: { r: 0, g: 82, b: 172, a: 255 }
+// pub const PURPLE: { r: 200, g: 122, b: 255, a: 255 }
+// pub const VIOLET: { r: 135, g: 60, b: 190, a: 255 }
+// pub const DARKPURPLE: { r: 112, g: 31, b: 126, a: 255 }
+// pub const BEIGE: { r: 211, g: 176, b: 131, a: 255 }
+// pub const BROWN: { r: 127, g: 106, b: 79, a: 255 }
+// pub const DARKBROWN: { r: 76, g: 63, b: 47, a: 255 }
+// pub const WHITE: { r: 255, g: 255, b: 255, a: 255 }
+// pub const BLACK: { r: 0, g: 0, b: 0, a: 255 }
+// pub const BLANK: { r: 0, g: 0, b: 0, a: 0 }
+// pub const MAGENTA: { r: 255, g: 0, b: 255, a: 255 }
+// pub const RAYWHITE: { r: 245, g: 245, b: 245, a: 255 }
+
 
 @external(javascript, "./raylib_ffi.mjs", "init_window")
 pub fn init_window(width:Int,heigth:Int,title:String) -> Nil
