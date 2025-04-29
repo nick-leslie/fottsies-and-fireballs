@@ -11,25 +11,9 @@ import input.{Input,Down,DownForward,Forward,InputWithAttack,Light,Neutral,Back}
 import player.{Startup,State,Active,Recovery}
 import raylib.{Rectangle, type Rectangle}
 
-pub fn main() {
-  let a = raylib.Rectangle(1.0,0.0,1.0,0.0)
-  let b = raylib.Rectangle(1.0,0.0,1.5,0.0)
-  collisons.rect_rect_gjk(a,b) |> io.debug
-  // let fun = fn (list:List(raylib.Rectangle)) {
-  //   use #(a,b) <- list.map(list.window_by_2(list))
-  //   collisons.rect_rect_gjk(a,b)
-  // }
-  // bench.run([
-  //   bench.Input("simple", [a,b]),
-  // ],
-  // [bench.Function("rect",fun)],
-  // [bench.Duration(1000), bench.Warmup(100)]
-  // )
-  // |> bench.table([bench.IPS, bench.Min, bench.P(99)])
-  // |> io.println
-}
 
 //todo this is a bad name
+//todo setup a message buss for things like projectiles and hitting opponents
 pub type GameKernel(cs) {
   GameKernel(
     p1:player.PlayerState(cs), // cs should be a varent on charecter state
@@ -56,7 +40,7 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
   let p1 = player.new_player(
     side: 1.0,x:10.0*. sprite_scale,
     y:-200.0*. sprite_scale,
-    charecter_state:p1_varent
+    charecter_extras:p1_varent
   )
   |> player.inital_states(sprite_scale)
   |> player.append_states([
@@ -87,7 +71,7 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
         player.PlayerState(..player,body: basics.RiggdBody(..player.body,vel:vector2.Vector2(0.0,player.body.vel.y)))
       }))],
       Startup([],player_col,[],option.None) |> list.repeat(3),
-      [Active(hit_boxes:[player.Hitbox(Rectangle(70.0,20.0,80.0,10.0),10,player.no_mod_col,10,player.no_mod_col)],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
+      [Active(hit_boxes:[player.Hitbox(Rectangle(70.0,20.0,80.0,10.0),10,fn(_point,player) { player.PlayerState(..player,body:basics.add_force(player.body,vector2.Vector2(0.0,-200.0)))},10,player.no_mod_col)],world_box:player_col,hurt_boxes:[],cancel_options:[],on_frame:option.Some(fn(player) {
         io.debug("ran light")
         player
       }))],
@@ -103,7 +87,7 @@ pub fn new_game_kernel(sprite_scale,p1_varent,p2_varent) {
   |> player.add_new_pattern(input:[InputWithAttack(Forward,Light)], state_index:8,priority:0)
   |> player.add_new_pattern(input:[InputWithAttack(input.Back,Light)], state_index:8,priority:0)
 
-  let p2 = player.new_player(side:-1.0,x:100.0 *. sprite_scale,y:-200.0 *.sprite_scale,charecter_state:p2_varent)
+  let p2 = player.new_player(side:-1.0,x:100.0 *. sprite_scale,y:-200.0 *.sprite_scale,charecter_extras:p2_varent)
   |> player.inital_states(sprite_scale)
   GameKernel(p1,new_controls(),p2,new_controls(),[
     player.WorldBox(
@@ -161,8 +145,8 @@ pub fn run_frame(game:GameKernel(cs)) {
   let p1 = p1 |> player.run_world_collisons(game.world_colliders)
   let p2 = p2 |> player.run_world_collisons(game.world_colliders)
 
-  //let p1_hurt = player.get_hurt_collisons(p1,p2)
-  let p2_hurt = player.get_hurt_collisons(p2,p1)
+  // let p1 = player.get_hurt_collisons(p1,p2) |> player.resolve_collison_state(p1)
+  let p2 = player.get_hurt_collisons(p2,p1) |> player.resolve_collison_state(p2)
 
   let p1 = p1 |> player.check_side(p2)
   let p2 = p2 |> player.check_side(p1)

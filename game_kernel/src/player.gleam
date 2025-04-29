@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/order
 import gleam/io
 import gleam/option
@@ -21,38 +22,37 @@ const full_screen_max = 100 // this is the maximum distence that we are able to 
 type StateIndex = Int
 //todo we may ned to split this up to reduce the copying
 // right now we have player taking the world as a generic so we can do things like spawn fireballs
-//todo this should be a a generic
-pub type PlayerState(charecter_state) {
+pub type PlayerState(charecter_extras) {
   PlayerState(
     p1_side:Float,
     body: basics.RiggdBody,
-    states:iv.Array(State(charecter_state)),//todo we may  want to use dicts for this
+    states:dict.Dict(Int,State(charecter_extras)),//todo we may  want to use dicts for this
     patterns:List(input.Pattern),
     current_state:Int,
     current_frame:Int,
     blocking:Bool,
     grounded:Bool,
     charge:Int,
-    charecter_state:charecter_state
+    charecter_extras:charecter_extras //todo rename this
   )
 }
 
-pub fn new_player(side p1_side:Float,x x,y y,charecter_state charecter_state:charecter_state) -> PlayerState(charecter_state) {
+pub fn new_player(side p1_side:Float,x x,y y,charecter_extras charecter_extras:charecter_extras) -> PlayerState(charecter_extras) {
   PlayerState(
     p1_side:p1_side,
     body:basics.new(vector2.Vector2(x,y),10.0),
-    states:iv.new(), //todo replace with editor stuff
+    states:dict.new(), //todo replace with editor stuff
     patterns:list.new(),
     current_state:0,
     current_frame:0,
     blocking:False,
     grounded:False,
     charge:0,
-    charecter_state:charecter_state
+    charecter_extras:charecter_extras
   )
 }
 //todo pull this out and make it editor stuff
-pub fn inital_states(player:PlayerState(charecter_state),scale) {
+pub fn inital_states(player:PlayerState(charecter_extras),scale) {
   let player_col = make_player_world_box(xy:#(0.0 *. scale,20.0 *.scale),wh:#(50.0 *. scale,10.0*. scale))
   let hurtbox = HurtBox(Rectangle(32.0 *. scale,32.0 *. scale,0.0,0.0))
   let states = [
@@ -79,7 +79,7 @@ pub fn inital_states(player:PlayerState(charecter_state),scale) {
   ])),
   State("up",iv.from_list(list.flatten([
     Active(hit_boxes:[],world_box:player_col,hurt_boxes:[hurtbox],cancel_options:[],on_frame:option.
-      Some(fn(player:PlayerState(charecter_state)) {
+      Some(fn(player:PlayerState(charecter_extras)) {
         //todo add a grounded state to players
         PlayerState(..player,
           body: basics.add_force(player.body,vector2.Vector2(0.0,-17.0))
@@ -107,7 +107,11 @@ pub fn inital_states(player:PlayerState(charecter_state),scale) {
     )],
     Recovery([],player_col,[],option.None) |> list.repeat(60)
   ]))),
-  ] |> iv.append_list(player.states,_)
+  ]
+  |> list.index_fold(player.states,fn(states,state,index) {dict.insert(states,index,state)})
+
+  states |> dict.keys() |> echo
+
   PlayerState(
     ..player,
     states: states
@@ -120,15 +124,17 @@ pub fn inital_states(player:PlayerState(charecter_state),scale) {
   |> add_new_pattern(input:[Input(input.UpForward)], state_index:5,priority:0)
 }
 
-pub fn append_states(player,states:List(State(charecter_state))) {
+pub fn append_states(player:PlayerState(charecter_extras),states:List(State(charecter_extras))) {
+  let states = list.fold(states,player.states,fn(states,state) {dict.insert(states,dict.size(states),state)})
+  states |> dict.keys |> echo
   PlayerState(
     ..player,
-    states:iv.append_list(player.states,states)
+    states: states
   )
 }
 
 
-pub fn add_new_pattern(player:PlayerState(cs),input input:List(input.Input),state_index state_index:StateIndex,priority priority:Int) {
+pub fn add_new_pattern(player:PlayerState(ce),input input:List(input.Input),state_index state_index:StateIndex,priority priority:Int) {
   //this is slower but its a one time thing and its needed for priority
   let patterns  = list.append(player.patterns,[input.Pattern(
     input,
@@ -140,8 +146,8 @@ pub fn add_new_pattern(player:PlayerState(cs),input input:List(input.Input),stat
 }
 
 
-pub fn get_current_frame(player:PlayerState(cs)) {
-  let assert Ok(player_state) = iv.get(player.states,player.current_state)
+pub fn get_current_frame(player:PlayerState(ce)) {
+  let assert Ok(player_state) = dict.get(player.states,player.current_state)
   let assert Ok(player_frame) = iv.get(player_state.frames,player.current_frame)
   player_frame
 }
@@ -149,45 +155,45 @@ pub fn get_current_frame(player:PlayerState(cs)) {
 
 //---- states
 
-pub type State(charecter_state) {
+pub type State(charecter_extras) {
   State(
     name:String,
-    frames:iv.Array(Frame(charecter_state))
+    frames:iv.Array(Frame(charecter_extras))
   )
 }
 
 
 
-pub type Frame(charecter_state) {
+pub type Frame(charecter_extras) {
   Startup(
-    hurt_boxes:List(Collider(charecter_state)),
-    world_box:Collider(charecter_state),
+    hurt_boxes:List(Collider(charecter_extras)),
+    world_box:Collider(charecter_extras),
     cancel_options:List(StateIndex),
-    on_frame:option.Option(fn (PlayerState(charecter_state)) -> PlayerState(charecter_state)),
+    on_frame:option.Option(fn (PlayerState(charecter_extras)) -> PlayerState(charecter_extras)),
   )
   Active (
-    hurt_boxes:List(Collider(charecter_state)),
-    world_box:Collider(charecter_state),
+    hurt_boxes:List(Collider(charecter_extras)),
+    world_box:Collider(charecter_extras),
     cancel_options:List(StateIndex),
-    on_frame:option.Option(fn (PlayerState(charecter_state)) -> PlayerState(charecter_state)),
-    hit_boxes:List(Collider(charecter_state)),
+    on_frame:option.Option(fn (PlayerState(charecter_extras)) -> PlayerState(charecter_extras)),
+    hit_boxes:List(Collider(charecter_extras)),
   )
   Recovery(
-    hurt_boxes:List(Collider(charecter_state)),
-    world_box:Collider(charecter_state),
+    hurt_boxes:List(Collider(charecter_extras)),
+    world_box:Collider(charecter_extras),
     cancel_options:List(StateIndex),
-    on_frame:option.Option(fn (PlayerState(charecter_state)) -> PlayerState(charecter_state)),
+    on_frame:option.Option(fn (PlayerState(charecter_extras)) -> PlayerState(charecter_extras)),
   )
   Stun(
-    hurt_boxes:List(Collider(charecter_state)),
-    world_box:Collider(charecter_state),
+    hurt_boxes:List(Collider(charecter_extras)),
+    world_box:Collider(charecter_extras),
     cancel_options:List(StateIndex),
-    on_frame:option.Option(fn (PlayerState(charecter_state)) -> PlayerState(charecter_state)),
+    on_frame:option.Option(fn (PlayerState(charecter_extras)) -> PlayerState(charecter_extras)),
     is_hitstun:Bool
   )
 }
 
-pub fn update_state(player:PlayerState(cs),buffer:input.Buffer) {
+pub fn update_state(player:PlayerState(ce),buffer:input.Buffer) {
   let proposed_state = input.pick_state(buffer,player.patterns)
   case proposed_state == player.current_state {
     False -> {
@@ -212,7 +218,7 @@ pub fn update_state(player:PlayerState(cs),buffer:input.Buffer) {
 }
 
 
-pub fn add_grav(player:PlayerState(cs)) {
+pub fn add_grav(player:PlayerState(ce)) {
   //todo we may want to disable grav
   // case player.body.vel.y <. grav_max {
   //   True -> PlayerState(..player,body:
@@ -231,8 +237,8 @@ pub fn add_grav(player:PlayerState(cs)) {
 }
 
 //todo this is breaking
-fn advance_frame(player:PlayerState(cs),next_state:StateIndex) {
-  let assert Ok(state) = iv.get(player.states,player.current_state)
+fn advance_frame(player:PlayerState(ce),next_state:StateIndex) {
+  let assert Ok(state) = dict.get(player.states,player.current_state)
   case {player.current_frame == {iv.length(state.frames) - 1}} {
     False -> {
       PlayerState(..player,current_frame:player.current_frame+1)
@@ -243,7 +249,7 @@ fn advance_frame(player:PlayerState(cs),next_state:StateIndex) {
   }
 }
 
-fn run_frame(player:PlayerState(cs)) {
+fn run_frame(player:PlayerState(ce)) {
   //todo resolve collisons and physics here
   let current_frame = get_current_frame(player)
   case current_frame.on_frame {
@@ -252,7 +258,7 @@ fn run_frame(player:PlayerState(cs)) {
   }
 }
 //todo fix me
-pub fn check_side(self:PlayerState(cs),other:PlayerState(cs)) {
+pub fn check_side(self:PlayerState(ce),other:PlayerState(ce)) {
   let self_body = self.body |> basics.move_by(self.body.vel)
   let other_body = other.body |> basics.move_by(self.body.vel)
   case float.compare(self_body.pos.x-.other_body.pos.x,0.0) {
@@ -266,7 +272,7 @@ pub fn check_side(self:PlayerState(cs),other:PlayerState(cs)) {
 //
 
 
-pub fn step(player:PlayerState(cs)) {
+pub fn step(player:PlayerState(ce)) {
 
   PlayerState(..player,
     body:basics.step(player.body)
@@ -275,26 +281,26 @@ pub fn step(player:PlayerState(cs)) {
 }
 
 //--- collisions
-type OnCollionFn(cs) = fn (#(Float,Float),PlayerState(cs)) -> PlayerState(cs)
+type OnCollionFn(ce) = fn (#(Float,Float),PlayerState(ce)) -> PlayerState(ce)
 
-pub fn no_mod_col(vec:#(Float,Float),ps:PlayerState(cs)) {
+pub fn no_mod_col(vec:#(Float,Float),ps:PlayerState(ce)) {
   ps
 }
 
-pub type Collider(cs) {
+pub type Collider(ce) {
   Hitbox(
     box:Rectangle,
     hit_stun_frames:Int,
-    hit_stun_fn:OnCollionFn(cs), // todo refactor
+    hit_stun_fn:OnCollionFn(ce), // todo refactor
     block_stun_frames:Int,
-    block_stun_fn:OnCollionFn(cs)
+    block_stun_fn:OnCollionFn(ce)
   )
   HurtBox(
     box:Rectangle
   )
   WorldBox(
     box:Rectangle,
-    on_colison:OnCollionFn(cs),
+    on_colison:OnCollionFn(ce),
     //no_col_err: this is for the error we emit when there is no collison sould wrap a collsion error and another error
   )
 }
@@ -314,24 +320,24 @@ pub fn make_player_world_box(wh wh:#(Float,Float),xy xy:#(Float,Float)) {
 
 
 
-pub type CollionInfo(cs) {
+pub type CollionInfo(ce) {
   HurtCollion(
-    col:Collider(cs),
-    moddify_vel:OnCollionFn(cs),
+    col:Collider(ce),
+    moddify_vel:OnCollionFn(ce),
     stun_frames:Int,
     state_index:Int
   )
   PlayerToWorld(
-    player:PlayerState(cs),
-    moddify_vel:OnCollionFn(cs),
+    player:PlayerState(ce),
+    moddify_vel:OnCollionFn(ce),
   )
 }
 
-pub fn collider_to_player_space(player:PlayerState(cs),box:Rectangle) {
+pub fn collider_to_player_space(player:PlayerState(ce),box:Rectangle) {
   Rectangle(..box,x:box.x +. player.body.pos.x,y:box.y +. player.body.pos.y)
 }
 
-pub fn run_world_collisons(self:PlayerState(cs),world_boxes:List(Collider(cs))) {
+pub fn run_world_collisons(self:PlayerState(ce),world_boxes:List(Collider(ce))) {
   let frame = get_current_frame(self)
   use player,col <- list.fold(world_boxes,self)
   let assert WorldBox(box,on_col) = col
@@ -351,8 +357,10 @@ pub fn run_world_collisons(self:PlayerState(cs),world_boxes:List(Collider(cs))) 
   }
 }
 
-
-pub fn get_hurt_collisons(self,other) {
+//could be a message buss
+//todo plan to flatten this with assert
+//tood bug were we are collidign with self
+pub fn get_hurt_collisons(self,other) ->  List(CollionInfo(ce)) {
   let self_frame = get_current_frame(self)
   let other_frame = get_current_frame(other)
   //check if the other player is active and check if there hit boxes overlap with our hurt boxes
@@ -360,32 +368,33 @@ pub fn get_hurt_collisons(self,other) {
     Active(_hurt_boxs,_world_box,_cancle_options, _on_active, hit_boxs) -> {
       //if any resolve as  collision we return
       use colided_list,hit_box <- list.fold(hit_boxs,[])
-      case hit_box |> echo {
-        Hitbox(hit_rect, _, _, _, _)  as hit_box -> {
-          self_frame.hurt_boxes |> echo
-          use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
-          // todo check perf
-          case collisons.moving_box_collision(hit_rect,other.body,hurt_box.box,other.body) {
-            Ok(point) -> {
-              list.append(colided_list,[
-                case self.blocking {
-                  True -> HurtCollion(hurt_box,hit_box.block_stun_fn,hit_box.block_stun_frames,0) //todo update index to be correct based on state
-                  False ->  HurtCollion(hurt_box,hit_box.hit_stun_fn,hit_box.hit_stun_frames,0)
-                }
-              ])
+      let assert Hitbox(hit_rect,hit_stun_frames,hit_stun_fn,block_stun_frames,block_stun_fn) = hit_box
+
+      use colided_list,hurt_box <- list.fold(self_frame.hurt_boxes,colided_list)
+      // todo check perf
+      case collisons.moving_box_collision(hit_rect,other.body,hurt_box.box,self.body) {
+        Ok(_point) -> {
+          list.append(colided_list,[
+            case self.blocking {
+              True ->   HurtCollion(hurt_box,block_stun_fn,block_stun_frames,0) //todo update index to be correct based on state
+              False ->  HurtCollion(hurt_box,hit_stun_fn,hit_stun_frames,0)
             }
-            Error(_any) -> {
-              colided_list
-            }
-          } |> echo
+          ])
         }
-        _ -> {
-          []
+        Error(_any) -> {
+          colided_list
         }
       }
     }
     _ -> []
   }
+}
+
+//todo I need to come up with rules for how to decide what state index to apply.
+pub fn resolve_collison_state(col_list:List(CollionInfo(ce)),player:PlayerState(ce))  {
+  use player,col_info <- list.fold(col_list,player)
+  let assert HurtCollion(_colider,apply_force,_stun_frames,_state_index) = col_info
+  apply_force(#(0.0,0.0),player) //todo for now this works
 }
 
 //todo may want to seprate this into primatives but like for now we chillen
