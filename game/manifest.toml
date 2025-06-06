@@ -3,11 +3,13 @@
 
 packages = [
   { name = "birl", version = "1.8.0", build_tools = ["gleam"], requirements = ["gleam_regexp", "gleam_stdlib", "ranger"], otp_app = "birl", source = "hex", outer_checksum = "2AC7BA26F998E3DFADDB657148BD5DDFE966958AD4D6D6957DD0D22E5B56C400" },
-  { name = "game_kernel", version = "1.0.0", build_tools = ["gleam"], requirements = ["birl", "gleam_deque", "gleam_stdlib", "gloml", "iv", "raylib"], source = "local", path = "../game_kernel" },
+  { name = "game_kernel", version = "1.0.0", build_tools = ["gleam"], requirements = ["birl", "gleam_deque", "gleam_stdlib", "gleamy_bench", "gloml", "iv", "raylib"], source = "local", path = "../game_kernel" },
   { name = "gleam_deque", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], source = "git", repo = "https://github.com/nick-leslie/deque.git", commit = "a44aa0bca801aedca01dad88fa5c8c5ac280fb36" },
+  { name = "gleam_javascript", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_javascript", source = "hex", outer_checksum = "EF6C77A506F026C6FB37941889477CD5E4234FCD4337FF0E9384E297CB8F97EB" },
   { name = "gleam_regexp", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_regexp", source = "hex", outer_checksum = "7F5E0C0BBEB3C58E57C9CB05FA9002F970C85AD4A63BA1E55CBCB35C15809179" },
   { name = "gleam_stdlib", version = "0.57.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "86EFACDF6460B8681E82752C5490F9630EC0F138F88A037DDCB241799AA8811F" },
   { name = "gleam_yielder", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_yielder", source = "hex", outer_checksum = "8E4E4ECFA7982859F430C57F549200C7749823C106759F4A19A78AEA6687717A" },
+  { name = "gleamy_bench", version = "0.6.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleamy_bench", source = "hex", outer_checksum = "DEF68E4B097A56781282F0F9D48371A0ABBCDDCF89CAD05B28C3BEDD6B2E8DF3" },
   { name = "gleeunit", version = "1.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "0E6C83834BA65EDCAAF4FE4FB94AC697D9262D83E6F58A750D63C9F6C8A9D9FF" },
   { name = "gloml", version = "0.1.3", build_tools = ["gleam"], requirements = ["gleam_stdlib", "toml"], otp_app = "gloml", source = "hex", outer_checksum = "D70229ACD487010B2D1CB57FFCCB0D2BB38CEC885DC9688D51D1020A579AC057" },
   { name = "iv", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib", "gleam_yielder"], otp_app = "iv", source = "hex", outer_checksum = "B7A453DC85841098CAAEC4166FFCB38BD985EA1F90DC6ACFD5CF5DB45A317DF6" },
@@ -19,6 +21,7 @@ packages = [
 [requirements]
 birl = { version = ">= 1.8.0 and < 2.0.0" }
 game_kernel = { path = "../game_kernel" }
+gleam_javascript = { version = ">= 1.0.0 and < 2.0.0" }
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 iv = { version = ">= 1.1.1 and < 2.0.0" }

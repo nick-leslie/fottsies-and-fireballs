@@ -62,6 +62,9 @@ pub fn should_windows_close() -> Bool
 @external(javascript, "./raylib_ffi.mjs", "close_window")
 pub fn close_window() -> Nil
 
+@external(javascript, "./raylib_ffi.mjs", "draw_fps")
+pub fn draw_fps(x:Float,y:Float) -> Nil
+
 @external(javascript, "./raylib_ffi.mjs", "begin_drawing")
 pub fn begin_drawing() -> Nil
 
@@ -183,3 +186,10 @@ pub fn get_world_to_screen2d(pos:Vector2,cam:Camera) -> Vector2
 
 @external(javascript, "./raylib_ffi.mjs", "get_screen_to_world")
 pub fn get_screen_to_world(pos:Vector2,cam:Camera) -> Vector2
+
+
+@external(javascript, "./raylib_ffi.mjs", "gui_button")
+pub fn gui_button(rectangle:Rectangle, txt:String) ->Bool
+
+@external(javascript, "./raylib_ffi.mjs", "gui_textbox")
+pub fn gui_textbox(rectangle:Rectangle, txt:String,text_size:Int,edit_mode:Bool)->Bool

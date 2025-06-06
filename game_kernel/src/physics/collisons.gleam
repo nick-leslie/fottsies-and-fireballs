@@ -2,7 +2,7 @@ import gleam/result
 import gleam/io
 import gleam/order
 import raylib.{type Rectangle,Rectangle}
-import physics/basics.{type RiggdBody}
+import physics/riggdbody.{type RiggdBody}
 import physics/vector2.{Vector2,type Vector2}
 import gleam/option
 import gleam/float

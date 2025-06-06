@@ -19,6 +19,7 @@ birl = ">= 1.8.0 and < 2.0.0"
 game_kernel = {path = "../game_kernel"}
 iv = ">= 1.1.1 and < 2.0.0"
 raylib = {path = "../raylib"}
+gleam_javascript = ">= 1.0.0 and < 2.0.0"
 
 # gleam_deque = {git = "https://github.com/nick-leslie/deque.git" ,ref = "a44aa0b"}
 

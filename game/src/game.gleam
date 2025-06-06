@@ -1,3 +1,5 @@
+import bun
+import gleam/javascript/promise
 import gleam/int
 import birl/duration
 import iv
@@ -22,8 +24,8 @@ pub const key_j = 74
 pub const key_k = 75
 pub const key_l = 76
 
-pub const key_p = 80
-pub const key_n = 78
+pub const key_p = 80 //pause
+pub const key_n = 78 // step simulation
 
 fn default_input_map_p1() {
   dict.new()
@@ -52,13 +54,13 @@ pub type GameState{
 }
 
 
-const sprite_scale = 3.0
+const sprite_scale = 4.0
 const cam_zoom = 0.50
 pub fn main() {
   io.println("Hello from game")
   raylib.init_window(800,600,"please work")
   raylib.set_target_fps(60)
-  let p1_texture = raylib.load_texture("./assets/Sprite-0001.png")
+  let p1_texture = raylib.load_texture("./assets/sheet.png")
   let game_kernel = kernel.new_game_kernel(sprite_scale,FreddyFireball,FreddyFireball)
   |> kernel.update_p1_input_map(default_input_map_p1())
   |> kernel.update_p1_attack_map(default_attack_map_p1())
@@ -67,6 +69,8 @@ pub fn main() {
   update(GameState(game_kernel,p1_texture,p1_texture,False))
   raylib.unload_texture(p1_texture)
   raylib.close_window()
+  // promise.tap(bun.generate_heap_snapshot(),fn (a) {a})
+  bun.heap_stats()
 }
 
 fn game_update(game_engine:GameState) {
@@ -79,6 +83,7 @@ fn game_update(game_engine:GameState) {
 fn update(game_engine:GameState) {
 
   raylib.begin_drawing()
+  raylib.draw_fps(10.0,10.0)
   case raylib.should_windows_close() {
     False -> {
       raylib.clear_background()
@@ -115,14 +120,14 @@ fn update(game_engine:GameState) {
       game_kernel.p1
       |> draw_collider()
       |> draw_hitboxs()
-      |> draw_hurtboxs()
+      // |> draw_hurtboxs()
       |> draw_vel()
       let _ = draw_player(game_kernel.p2,game_engine.p2_sheet)
 
       game_kernel.p2
       |> draw_collider()
       |> draw_hitboxs()
-      |> draw_hurtboxs()
+      // |> draw_hurtboxs()
       |> draw_vel()
 
       raylib.end_mode_2d(cam)
@@ -134,24 +139,25 @@ fn update(game_engine:GameState) {
       game_engine
     }
   }
+
 }
 
-
+const sprite_size = 32.0
 
 fn draw_player(player:player.PlayerState(cs),texture:raylib.Texture) {
   Ok(raylib.draw_texture_pro(
     texture:texture,
     source:raylib.Rectangle(
-      64.0 *. player.p1_side,
-      64.0,
-      0.0 +. {64.0 *. int.to_float(player.current_frame)},
-      0.0 +. {64.0 *. int.to_float(player.current_state)}
+      sprite_size *. player.p1_side,
+      sprite_size,
+      0.0 +. {sprite_size *. int.to_float(player.current_frame)},
+      0.0 +. {sprite_size *. int.to_float(player.current_state)}
     ),
     dest:raylib.Rectangle(
-      64.0 *. sprite_scale,
-      64.0 *. sprite_scale,
-      {player.body.pos.x -. { {64.0 *. sprite_scale}  /. 2.0} },
-      {player.body.pos.y -. {{64.0  *. sprite_scale} /. 2.0} }
+      sprite_size *. sprite_scale,
+      sprite_size *. sprite_scale,
+      {player.body.pos.x -. { {sprite_size *. sprite_scale}  /. 2.0} },
+      {player.body.pos.y -. {{sprite_size *. sprite_scale} /. 2.0} }
     ),
     x: 0.0,
     y: 0.0,

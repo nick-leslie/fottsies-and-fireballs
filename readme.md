@@ -26,18 +26,20 @@ Server - this is where the netcode will run
 
 - [x] Input reader for non-charge special moves
 - [x] Character state management
-- [ ] moving collisions
-- [ ] Sprite sheet support
+- [x] moving collisions
+- [x] Sprite sheet support
 - [ ] projectile support
 - [ ] charge moves
 - [ ] health
 - [ ] player 2
-- [ ] Camera work
+- [ ] Camera work(introduce camera limits into the game kernel)
 - [ ] supers
 - [ ] ui
 
 
 Post core game engine
+- [ ] charecter move format (for hitboxes and animations)(might need to do javascript metaprograming)(or create a hashmap in game)
+- [ ] build a factory for creating moves
 - [ ] hitbox editor
 - [ ] character config files
 - [ ] Controller support
@@ -45,6 +47,7 @@ Post core game engine
 
 netcode plans
 - [ ] server side rollback
+- [ ] chashing charecter state
 - [ ] peer to peer option
 - [ ] Match-making server framework
 - [ ] steam?
