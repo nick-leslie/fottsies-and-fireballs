@@ -17,7 +17,7 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
       10.0 *. scale,
     ))
   let hurtbox = player.HurtBox(Rectangle(32.0 *. scale, 32.0 *. scale, 0.0, 0.0))
-  let states =
+  let moves =
     [
       player.Move(
         "neutral",
@@ -28,7 +28,7 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
             hurt_boxes: [hurtbox],
             cancel_options: [],
             on_frame: option.Some(fn(state) {
-              player.PlayerGameState(
+              player.PlayerState(
                 ..state,
                 body: riggdbody.RiggdBody(
                   ..state.body,
@@ -48,7 +48,7 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
             hurt_boxes: [hurtbox],
             cancel_options: [],
             on_frame: option.Some(fn(state) {
-              player.PlayerGameState(
+              player.PlayerState(
                 ..state,
                 body: riggdbody.RiggdBody(
                   ..state.body,
@@ -71,13 +71,13 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
             hurt_boxes: [hurtbox],
             cancel_options: [],
             on_frame: option.Some(fn(state) {
-              player.PlayerGameState(
+              player.PlayerState(
                 ..state,
                 body: riggdbody.RiggdBody(
                   ..state.body,
                   vel: vector2.add(
                     state.body.vel,
-                    vector2.Vector2(player.walk_speed *. state.p1_side, 0.0),
+                    vector2.Vector2({player.walk_speed *. -1.0} *. state.p1_side, 0.0),
                   ),
                 ),
               )
@@ -96,11 +96,12 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
               cancel_options: [],
               on_frame: option.Some(fn(player) {
                 //todo add a grounded state to players
-                player.PlayerGameState(
+                echo " running jump"
+                player.PlayerState(
                   ..player,
                   body: riggdbody.add_force(
                     player.body,
-                    vector2.Vector2(0.0, -17.0),
+                    vector2.Vector2(0.0, -20.0),
                   ),
                 )
               }),
@@ -115,13 +116,13 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
         iv.from_list(
           list.flatten([
             [
-              Active(
+              player.Active(
                 hit_boxes: [],
                 world_box: player_col,
                 hurt_boxes: [hurtbox],
                 cancel_options: [],
                 on_frame: option.Some(fn(state) {
-                  player.PlayerGameState(
+                  player.PlayerState(
                     ..state,
                     body: riggdbody.add_force(
                       state.body,
@@ -146,7 +147,7 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
                 hurt_boxes: [hurtbox],
                 cancel_options: [],
                 on_frame: option.Some(fn(state) {
-                  player.player.PlayerGameState(
+                  player.PlayerState(
                     ..state,
                     body: riggdbody.add_force(
                       state.body,
@@ -161,21 +162,17 @@ pub fn inital_moves(player:  player.PlayerStats(extra_stats,extra_state), scale)
         ),
       ),
     ]
-    |> list.index_fold(player.player.Moves, fn(states, state, index) {
+    |> list.index_fold(player.moves, fn(states, state, index) {
       dict.insert(states, index, state)
     })
 
-  states |> dict.keys() |> echo
 
-  PlayerStats(..player, moves: states)
+
+  player.PlayerStats(..player, moves: moves)
   |> player.add_new_pattern(input: [Input(Neutral)], state_index: 0, priority: 0)
   |> player.add_new_pattern(input: [Input(Forward)], state_index: 1, priority: 0)
   |> player.add_new_pattern(input: [Input(Back)], state_index: 2, priority: 0)
   |> player.add_new_pattern(input: [Input(Up)], state_index: 3, priority: 0)
   |> player.add_new_pattern(input: [Input(input.UpBack)], state_index: 4, priority: 0)
-  |> player.add_new_pattern(
-    input: [Input(input.UpForward)],
-    state_index: 5,
-    priority: 0,
-  )
+  |> player.add_new_pattern(input: [Input(input.UpForward)],state_index: 5,priority: 0,)
 }

@@ -13,7 +13,7 @@ import physics/vector2
 import raylib.{type Rectangle, Rectangle}
 
 //todo if things get nasty then we do this
-const grav_max = 10.0
+const grav_max = 1.1
 
 const full_screen_max = 100
 
@@ -35,6 +35,24 @@ pub type PlayerStats(extra_stats,extra_state) {
   )
 }
 
+pub fn new_player_stats(
+  max_health: Int,
+  walk_speed:Float,
+  air_speed:Float, // this is the speed of forward and backward jumps
+  mass:Float,
+  charecter_extras: extra_stats,
+) -> PlayerStats(extra_stats,extra_state) {
+  PlayerStats(
+    moves: dict.new(),
+    patterns: [],
+    max_health: max_health,
+    walk_speed: walk_speed,
+    air_speed: air_speed,
+    mass: mass,
+    charecter_extras: charecter_extras,
+  )
+}
+
 pub type PlayerState(extra_state) {
   PlayerState(
     p1_side: Float,
@@ -49,13 +67,18 @@ pub type PlayerState(extra_state) {
     extra:extra_state
   )
 }
+pub type ExtraStatsInit(extra_stats,extra_state) = fn(PlayerStats(extra_stats,extra_state)) -> extra_state
+
 //we call it extra because this is stats that are dif per charecter
-pub type ExtraStateInit(extra_stats) = fn(PlayerStats(extra_stats,extra_state)) -> extra_state
 
 //todo we may ned to split this up to reduce the copying
 // right now we have player taking the world as a generic so we can do things like spawn fireballs
 
-pub fn new_player_state(stats stats:PlayerStats(extra_stats,extra_state),extra_state_init extra_state_init:ExtraStateInit,side side:Float,start_pos start_pos:vector2.Vector2) -> Player(extra_stats,extra_state) {
+pub fn new_player_state(
+  stats stats:PlayerStats(extra_stats,extra_state),
+  extra_state_init extra_state_init:ExtraStatsInit(extra_stats,extra_state),
+  side side:Float,
+  start_pos start_pos:vector2.Vector2) -> PlayerState(extra_state) {
     PlayerState(
       p1_side:side,
       body:riggdbody.new(start_pos,stats.mass),
@@ -146,55 +169,55 @@ pub type Frame(extra_state) {
   )
 }
 
-pub fn update_state(player_state player_state:PlayerState,player_stats player_stats:PlayerStats,buffer buffer: input.Buffer) -> PlayerState(extra_state) {
-  let proposed_state = input.pick_state(buffer, player.stats.patterns)
-  case proposed_state == player.state.current_state {
+pub fn update_state(player_state player_state:PlayerState(extra_state),player_stats player_stats:PlayerStats(extra_stats,extra_state),buffer buffer: input.Buffer) -> PlayerState(extra_state) {
+  let proposed_state = input.pick_state(buffer, player_stats.patterns)
+  case proposed_state == player_state.current_state {
     False -> {
-      let frame = get_current_frame(stats:player.stats,state:player.state)
+      let frame = get_current_frame(stats:player_stats,state:player_state)
       case
         list.find(frame.cancel_options, fn(cancel_index) {
           cancel_index == proposed_state
         })
       {
         Error(_) -> {
-          advance_frame(player, proposed_state)
+          advance_frame(player_state,player_stats, proposed_state)
         }
         Ok(_) -> {
-          PlayerState(..player.state, current_state: proposed_state, current_frame: 0)
+          PlayerState(..player_state, current_state: proposed_state, current_frame: 0)
         }
       }
     }
     True -> {
-      advance_frame(player, 0)
+      advance_frame(player_state,player_stats, 0)
     }
   }
-  |> run_frame(player.stats,_)
+  |> run_frame(player_stats)
 }
 
 pub fn add_grav(player: PlayerState(extra_state)) {
   PlayerState(
     ..player,
-    body: riggdbody.add_force(player.body, vector2.Vector2(0.0, 9.8)),
+    body: riggdbody.add_force(player.body, vector2.Vector2(0.0, grav_max)),
   )
 }
 
 //todo this is breaking
-fn advance_frame(player: Player(extra_stats,extra_state), next_state: StateIndex) {
-  let assert Ok(state) = dict.get(player.stats.moves, player.state.current_state)
+fn advance_frame(player_state: PlayerState(extra_state),player_stats:PlayerStats(extra_stats,extra_state), next_state: StateIndex) {
+  let assert Ok(state) = dict.get(player_stats.moves, player_state.current_state)
   use <- bool.guard(
-    player.state.hit_stun > 0,
-    PlayerState(..player.state, hit_stun: player.state.hit_stun - 1),
+    player_state.hit_stun > 0,
+    PlayerState(..player_state, hit_stun: player_state.hit_stun - 1),
   )
   // if we dont have hitstun increase current frame
   use <- bool.guard(
-    { player.state.current_frame == { iv.length(state.frames) - 1 } },
-    PlayerState(..player.state, current_state: next_state, current_frame: 0),
+    { player_state.current_frame == { iv.length(state.frames) - 1 } },
+    PlayerState(..player_state, current_state: next_state, current_frame: 0),
   )
   // reset if we reach endr
-  PlayerState(..player.state, current_frame: player.state.current_frame + 1)
+  PlayerState(..player_state, current_frame: player_state.current_frame + 1)
 }
 
-fn run_frame(stats:PlayerStats(extra_stats,extra_state),state:PlayerState(extra_state)) {
+fn run_frame(state:PlayerState(extra_state),stats:PlayerStats(extra_stats,extra_state)) {
   let current_frame = get_current_frame(stats,state)
   //todo resolve collisons and physics here
   case current_frame.on_frame {
@@ -281,11 +304,12 @@ pub fn run_world_collisons(
   stats stats:PlayerStats(extra_stats,extra_state),
   world_boxes world_boxes: List(Collider(extra_state)),
 ) {
-  use player, col <- list.fold(world_boxes, self)
+  let frame = get_current_frame(stats,state)
+  use player, col <- list.fold(world_boxes, state)
   let assert WorldBox(box, on_col) = col
-
   let box_body = riggdbody.new(vector2.Vector2(0.0, 0.0), 10.0)
   case
+    //todo what do we do here
     collisons.moving_box_collision(
       frame.world_box.box,
       player.body,
@@ -333,12 +357,13 @@ pub fn get_hurt_collisons(
         colided_list,
       )
       // todo check perf
+      // todo this is a bug wth collison
       case
         collisons.moving_box_collision(
           hit_rect,
           other_state.body,
           hurt_box.box,
-          other_state.body,
+          self_state.body,
         )
       {
         Ok(_point) -> {
